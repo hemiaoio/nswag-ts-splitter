@@ -2,7 +2,7 @@
 
 1. Move this directory to the project root directory.
 1. service.config.nswag can be used directly by NSwagStudio or by using the npm project nswag
-    1. NSwagStudio download address: [github] (https://github.com/RSuter/NSwag/releases)
+    1. NSwagStudio download address: [github](https://github.com/RSuter/NSwag/releases)
     2. npm Usage: npm install nswag -D
 1. Set the API address: Modify the API swagger document address in service.config.nswag [swaggerGenerator:fromSwagger:url]
 1. Set the generated destination address: in service.config.nswag [codeGenerators:swaggerToTypeScriptClient:output] Modify Generate target address (relative to this directory)
