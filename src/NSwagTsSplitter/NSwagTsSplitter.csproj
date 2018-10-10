@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NJsonSchema" Version="9.11.0" />
+    <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="9.11.0" />
+    <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="11.20.1" />
+    <PackageReference Include="NSwag.Commands" Version="11.20.1" />
+    <PackageReference Include="NSwag.Core" Version="11.20.1" />
+  </ItemGroup>
+
+</Project>
