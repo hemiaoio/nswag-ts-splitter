@@ -96,27 +96,47 @@ namespace NSwagTsSplitter
                 var codeArtifact = new CodeArtifact(typeName, model.BaseClass, type, CodeArtifactLanguage.TypeScript, template);
 
                 List<string> typeNames = new List<string>();
+                List<string> nswagTypes = new List<string>();
                 StringBuilder builder = new StringBuilder();
                 foreach (var property in model.Properties)
                 {
-                    var propertyType = property.Type.IndexOf("[") > 0 ? property.Type.Replace("[]", "") : property.Type;
-                    if (!typeNames.Contains(propertyType) && !Constant.TsBaseType.Contains(propertyType) && !property.IsDictionary)
+                    var propertyType = property.Type.IndexOf("[", StringComparison.Ordinal) > 0 ?
+                        property.Type.Replace("[]", "") : property.Type;
+                    if (!Constant.TsBaseType.Contains(propertyType) && !property.IsDictionary)
                     {
                         typeNames.Add(propertyType);
                     }
-                    var propertyDictionaryItemType = property.DictionaryItemType.IndexOf("[") > 0 ? property.DictionaryItemType.Replace("[]", "") : property.DictionaryItemType;
-                    if (!typeNames.Contains(propertyDictionaryItemType) && !Constant.TsBaseType.Contains(propertyDictionaryItemType))
+
+                    if (Constant.UtilitiesModules.Contains(propertyType))
+                    {
+                        nswagTypes.Add(propertyType);
+                    }
+                    var propertyDictionaryItemType = property.DictionaryItemType.IndexOf("[", StringComparison.Ordinal) > 0 ?
+                        property.DictionaryItemType.Replace("[]", "") : property.DictionaryItemType;
+                    if (!Constant.TsBaseType.Contains(propertyDictionaryItemType))
                     {
                         typeNames.Add(propertyDictionaryItemType);
                     }
-                    var propertyArrayItemType = property.ArrayItemType.IndexOf("[") > 0 ? property.ArrayItemType.Replace("[]", "") : property.ArrayItemType;
-                    if (!typeNames.Contains(propertyArrayItemType) && !Constant.TsBaseType.Contains(propertyArrayItemType))
+                    if (Constant.UtilitiesModules.Contains(propertyDictionaryItemType))
+                    {
+                        nswagTypes.Add(propertyDictionaryItemType);
+                    }
+                    var propertyArrayItemType = property.ArrayItemType.IndexOf("[", StringComparison.Ordinal) > 0 ?
+                        property.ArrayItemType.Replace("[]", "") : property.ArrayItemType;
+                    if (!Constant.TsBaseType.Contains(propertyArrayItemType))
                     {
                         typeNames.Add(propertyArrayItemType);
                     }
+                    if (Constant.UtilitiesModules.Contains(propertyArrayItemType))
+                    {
+                        nswagTypes.Add(propertyArrayItemType);
+                    }
                 }
-                typeNames = typeNames.Where(c => c != typeName).ToList();
-                typeNames.ForEach(c => builder.AppendLine($"import {{{c}}} from './{c}';"));
+                typeNames.Distinct().Where(c => !nswagTypes.Contains(c)).Where(c => c != typeName).ToList().ForEach(c => builder.AppendLine($"import {{ {c} }} from './{c}';"));
+                if (nswagTypes.Any())
+                {
+                    builder.AppendLine($"import {{ {string.Join(",", nswagTypes.Distinct())} }} from './Utilities';");
+                }
                 builder.AppendLine();
 
                 codeArtifact.Code = builder.ToString() + codeArtifact.Code;

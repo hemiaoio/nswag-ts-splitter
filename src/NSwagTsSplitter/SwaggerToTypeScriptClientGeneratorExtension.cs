@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -67,31 +68,49 @@ namespace NSwagTsSplitter
                 }
             }
             List<string> typeNames = new List<string>();
+            List<string> nswagTypes = new List<string>();
             StringBuilder builder = new StringBuilder();
             foreach (var operation in operations)
             {
                 foreach (var parameter in operation.Parameters)
                 {
-                    var parameterType = parameter.Type.IndexOf("[") > 0 ? parameter.Type.Replace("[]", "") : parameter.Type;
-                    if (!typeNames.Contains(parameterType) && !Constant.TsBaseType.Contains(parameterType))
+                    var parameterType = parameter.Type.IndexOf("[", StringComparison.Ordinal) > 0 ? parameter.Type.Replace("[]", "") : parameter.Type;
+                    if (!Constant.TsBaseType.Contains(parameterType))
                     {
                         typeNames.Add(parameterType);
                     }
+
+                    if (Constant.UtilitiesModules.Contains(parameterType))
+                    {
+                        nswagTypes.Add(parameterType);
+                    }
                 }
-                var resultType = operation.ResultType.IndexOf("[") > 0 ? operation.ResultType.Replace("[]", "") : operation.ResultType;
-                if (!typeNames.Contains(resultType) && !Constant.TsBaseType.Contains(resultType))
+                var resultType = operation.ResultType.IndexOf("[", StringComparison.Ordinal) > 0 ? operation.ResultType.Replace("[]", "") : operation.ResultType;
+                if (!Constant.TsBaseType.Contains(resultType))
                 {
                     typeNames.Add(resultType);
                 }
-                var exceptionType = operation.ExceptionType.IndexOf("[") > 0 ? operation.ExceptionType.Replace("[]", "") : operation.ExceptionType;
-                if (!typeNames.Contains(exceptionType) && !Constant.TsBaseType.Contains(exceptionType))
+                if (Constant.UtilitiesModules.Contains(resultType))
+                {
+                    nswagTypes.Add(resultType);
+                }
+                var exceptionType = operation.ExceptionType.IndexOf("[", StringComparison.Ordinal) > 0 ? operation.ExceptionType.Replace("[]", "") : operation.ExceptionType;
+                if (!Constant.TsBaseType.Contains(exceptionType))
                 {
                     typeNames.Add(exceptionType);
                 }
+                if (Constant.UtilitiesModules.Contains(exceptionType))
+                {
+                    nswagTypes.Add(resultType);
+                }
             }
-            typeNames.ForEach(c => builder.AppendLine($"import {{{c}}} from './{c}';"));
-            // Append throwException
-            builder.AppendLine($"import {{throwException}} from './Utilities';");
+            typeNames.Distinct().Where(c => !nswagTypes.Contains(c)).ToList().ForEach(c => builder.AppendLine($"import {{ {c} }} from './{c}';"));
+
+            if (nswagTypes.Any())
+            {
+                builder.AppendLine($"import {{ {string.Join(",", nswagTypes.Distinct())} }} from './Utilities';");
+            }
+
             builder.AppendLine();
             MethodInfo methodInfo = instance.GetType().GetMethod(nameof(GenerateClientClass),
               BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
