@@ -106,6 +106,7 @@ namespace NSwagTsSplitter
             }
             typeNames.Distinct().Where(c => !nswagTypes.Contains(c)).ToList().ForEach(c => builder.AppendLine($"import {{ {c} }} from './{c}';"));
 
+            nswagTypes.Add("throwException");
             if (nswagTypes.Any())
             {
                 builder.AppendLine($"import {{ {string.Join(",", nswagTypes.Distinct())} }} from './Utilities';");
