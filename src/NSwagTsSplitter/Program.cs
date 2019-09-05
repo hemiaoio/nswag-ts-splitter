@@ -1,103 +1,77 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NJsonSchema.CodeGeneration;
-using NJsonSchema.CodeGeneration.TypeScript;
+using System.Text;
+using System.Threading.Tasks;
 using NJsonSchema.Infrastructure;
-using NSwag;
-using NSwag.CodeGeneration;
-using NSwag.CodeGeneration.TypeScript;
-using NSwag.CodeGeneration.TypeScript.Models;
-using NSwag.Commands;
 
 namespace NSwagTsSplitter
 {
     internal static class Program
     {
-        private static string _tsDirectory;
-        private static string GetParentPath(string path, int parentLevel)
+        private static async Task Main(string[] args)
         {
-            if (parentLevel > 0)
-            {
-                return GetParentPath(Directory.GetParent(path).FullName, --parentLevel);
-            }
-            else
-            {
-                return path;
-            }
-        }
+            // resolve the settings file
 
-        private static async System.Threading.Tasks.Task Main(string[] args)
-        {
-            DateTime startTime = DateTime.Now;
+            var currentDirectory = DynamicApis.DirectoryGetCurrentDirectory();
+            var configFiles = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag");
+            if (!configFiles.Any())
+            {
+                throw new FileNotFoundException("The runtime directory must be include *.nswag file.");
+            }
+
             DateTime levelTime = DateTime.Now;
+            var nswagDocumentHelper = new NSWagDocumentHelper();
+            var swaggerDocumentHelper = new SwaggerDocumentHelper();
+            string tsPath = string.Empty;
 
-            var currentDirectory = await DynamicApis.DirectoryGetCurrentDirectoryAsync();
-            var configFiles = await DynamicApis.DirectoryGetFilesAsync(currentDirectory, "*.nswag");
-            var document = await NSwagDocument.LoadWithTransformationsAsync(configFiles.FirstOrDefault(), string.Empty);
-            var swaggerDocument = await SwaggerDocument.FromUrlAsync(document.SwaggerGenerators.FromSwaggerCommand.Url);
-            var json = swaggerDocument.ToJson();
-            var settings = document.CodeGenerators.SwaggerToTypeScriptClientCommand.Settings;
-            _tsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, document.CodeGenerators.SwaggerToTypeScriptClientCommand.OutputFilePath);
+            // load config
+            var nSwagDocument = await nswagDocumentHelper.LoadDocumentFromFileAsync(configFiles.FirstOrDefault());
+            Console.WriteLine("NSwag config file loaded, use time：{0}ms", (DateTime.Now - levelTime).TotalSeconds);
+            var outputDirectory = IOHelper.CreateOrUpdatePath(nSwagDocument.CodeGenerators
+                .OpenApiToTypeScriptClientCommand.OutputFilePath);
+            IOHelper.CreateOrUpdatePath(outputDirectory);
+            levelTime = DateTime.Now;
 
-            if (!Directory.Exists(_tsDirectory))
+            // fetch swagger
+            var swaggerDocument =
+                await swaggerDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
+            Console.WriteLine("Swagger content loaded, use time：{0}ms", (DateTime.Now - levelTime).TotalSeconds);
+            levelTime = DateTime.Now;
+
+            var selfTypeScriptGenerator = new SelfTypeScriptGenerator(
+                nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand.Settings,
+                swaggerDocument);
+
+            // Utilities
+            var utilitiesCode = selfTypeScriptGenerator.GenerateUtilities();
+            tsPath = Path.Combine(outputDirectory, "Utilities.ts");
+            IOHelper.Delete(tsPath);
+            await File.WriteAllTextAsync(tsPath, utilitiesCode, Encoding.UTF8);
+            Console.WriteLine("Generate Utilities.ts complate, use time：{0}ms",
+                (DateTime.Now - levelTime).TotalSeconds);
+            levelTime = DateTime.Now;
+            // DtoClass
+            var dtos = selfTypeScriptGenerator.GenerateDtoClasses();
+            foreach (var dto in dtos)
             {
-                Directory.CreateDirectory(_tsDirectory);
-            }
-            else
-            {
-                DirectoryInfo di = new DirectoryInfo(_tsDirectory);
-                foreach (FileInfo file in di.GetFiles())
-                {
-                    file.Delete();
-                }
-                foreach (DirectoryInfo dir in di.GetDirectories())
-                {
-                    dir.Delete(true);
-                }
-            }
-            var _resolver = new TypeScriptTypeResolver(settings.TypeScriptGeneratorSettings);
-            _resolver.RegisterSchemaDefinitions(swaggerDocument.Definitions);
-
-            var _extensionCode = new TypeScriptExtensionCode(
-                settings.TypeScriptGeneratorSettings.ExtensionCode,
-                (settings.TypeScriptGeneratorSettings.ExtendedClasses ?? new string[] { }).Concat(new[] { settings.ConfigurationClass }).ToArray(),
-                new[] { settings.ClientBaseClass });
-
-            var tempClientCode = "Placeholder Code For SwaggerException!";
-            var clientClasses = new List<string>();
-            settings.ImportRequiredTypes = false;
-            settings.GenerateDtoTypes = false;
-            var model = new TypeScriptFileTemplateModel(tempClientCode, clientClasses, swaggerDocument, _extensionCode, settings, _resolver);
-            var template = settings.CodeGeneratorSettings.TemplateFactory.CreateTemplate("TypeScript", "File", model);
-            var utilitiesCode = template.Render();
-            utilitiesCode = utilitiesCode.Replace("function ", "export function ").Replace(tempClientCode, "");
-            utilitiesCode = utilitiesCode.Replace("\n\n", "\n").Replace("\n\n", "\n").Replace("\n\n", "\n");
-            File.WriteAllText(Path.Combine(_tsDirectory, "Utilities.ts"), utilitiesCode + "\n");
-
-            
-            var codeGen = new SwaggerToTypeScriptClientGenerator(swaggerDocument, settings);
-            var operations = codeGen.GetOperations(_resolver,swaggerDocument);
-            foreach (var controllerOperations in operations.GroupBy(o => o.ControllerName))
-            {
-                var controllerName = controllerOperations.Key;
-                var controllerClassName = settings.GenerateControllerName(controllerOperations.Key);
-                var clientCode = codeGen.GenerateClientClass(_resolver,controllerName, controllerClassName, controllerOperations.ToList(), ClientGeneratorOutputType.Full);
-                var tsPath = Path.Combine(_tsDirectory, controllerClassName + ".ts");
-                await File.WriteAllTextAsync(tsPath, clientCode + "\n");
+                tsPath = Path.Combine(outputDirectory, dto.Key + ".ts");
+                IOHelper.Delete(tsPath);
+                await File.WriteAllTextAsync(tsPath, dto.Value + "\n", Encoding.UTF8);
             }
 
-            var generator = new TypeScriptGenerator(swaggerDocument, settings.TypeScriptGeneratorSettings, _resolver);
-            var typeDef = TypeScriptGeneratorExtension.GenerateTypes(_resolver, _extensionCode);
-
-            foreach (CodeArtifact codeArtifact in typeDef.Artifacts)
-            {
-                var tsPath = Path.Combine(_tsDirectory, codeArtifact.TypeName + ".ts");
-                await File.WriteAllTextAsync(tsPath, codeArtifact.Code + "\n");
-            }
             Console.WriteLine("Generate dto files over, use time：{0}", (DateTime.Now - levelTime).TotalSeconds);
             levelTime = DateTime.Now;
+
+            // ClientClass
+            var classCodes = selfTypeScriptGenerator.GenerateClientClasses();
+            foreach (var @class in classCodes)
+            {
+                tsPath = Path.Combine(outputDirectory, @class.Key + ".ts");
+                IOHelper.Delete(tsPath);
+                await File.WriteAllTextAsync(tsPath, @class.Value + "\n", Encoding.UTF8);
+            }
+
             Console.WriteLine("Generate client files over, use time：{0}", (DateTime.Now - levelTime).TotalSeconds);
         }
     }

@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2036
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29215.179
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NSwagTsSplitter", "NSwagTsSplitter\NSwagTsSplitter.csproj", "{CE12B176-DDEC-4463-AC8E-45771C6F29A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NSwagTsSplitter.Tests", "..\test\NSwagTsSplitter.Tests\NSwagTsSplitter.Tests.csproj", "{E7435753-0D59-4CE7-81A7-F14907760712}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{CE12B176-DDEC-4463-AC8E-45771C6F29A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE12B176-DDEC-4463-AC8E-45771C6F29A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE12B176-DDEC-4463-AC8E-45771C6F29A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7435753-0D59-4CE7-81A7-F14907760712}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7435753-0D59-4CE7-81A7-F14907760712}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7435753-0D59-4CE7-81A7-F14907760712}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7435753-0D59-4CE7-81A7-F14907760712}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

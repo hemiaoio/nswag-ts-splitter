@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NJsonSchema" Version="9.11.0" />
-    <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="9.11.0" />
-    <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="11.20.1" />
-    <PackageReference Include="NSwag.Commands" Version="11.20.1" />
-    <PackageReference Include="NSwag.Core" Version="11.20.1" />
+    <PackageReference Include="NJsonSchema" Version="10.0.23" />
+    <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="10.0.23" />
+    <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="13.0.6" />
+    <PackageReference Include="NSwag.Commands" Version="13.0.6" />
+    <PackageReference Include="NSwag.Core" Version="13.0.6" />
   </ItemGroup>
 
 </Project>
