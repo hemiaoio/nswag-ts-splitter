@@ -1,4 +1,5 @@
-﻿{% if HasOperations -%}
+﻿import axios, { AxiosResponse, AxiosRequestConfig, AxiosInstance } from 'axios';
+{% if HasOperations -%}
 {% if GenerateClientInterfaces -%}
 {% if ExportTypes %}export {% endif %}interface I{{ Class }} {
 {%     for operation in Operations -%}

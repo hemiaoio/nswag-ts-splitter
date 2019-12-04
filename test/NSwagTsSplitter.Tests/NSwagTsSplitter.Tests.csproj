@@ -25,7 +25,7 @@
     <None Update="Config\nswag.nswag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Config\service.extensions.ts">
+    <None Update="Config\ServiceProxyBase.ts">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Config\swagger.json">

@@ -22,6 +22,7 @@ namespace NSwagTsSplitter
         private readonly TypeScriptGenerator _typeScriptGenerator;
         private readonly TypeScriptExtensionCode _extensionCode;
         private string _utilitiesModuleName = "Utilities";
+        private string _dtoDirName = "";
 
         private readonly MethodInfo _generateClientTypesMethodInfo = typeof(TypeScriptClientGenerator).GetMethod(
             "GenerateClientTypes",
@@ -84,8 +85,6 @@ namespace NSwagTsSplitter
         /// <summary>
         /// Generate all classes
         /// </summary>
-        /// <param name="outputDirectory"></param>
-        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public IDictionary<string, string> GenerateClientClasses()
         {
@@ -143,10 +142,6 @@ namespace NSwagTsSplitter
             List<string> typeNames = new List<string>();
             List<string> nswagTypes = new List<string>();
             StringBuilder builder = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(_clientGeneratorSettings.ClientBaseClass))
-            {
-                typeNames.Add(_clientGeneratorSettings.ClientBaseClass);
-            }
 
             foreach (var operation in operations)
             {
@@ -193,8 +188,15 @@ namespace NSwagTsSplitter
                 }
             }
 
-            typeNames.Distinct().Where(c => !nswagTypes.Contains(c)).ToList()
-                .ForEach(c => builder.AppendLine($"import {{ {c} }} from './{c}';"));
+            typeNames.Distinct().Where(c => !nswagTypes.Contains(c))
+                .ForEach(c =>
+                    builder.AppendLine(
+                        $"import {{ {c} }} from './{(string.IsNullOrWhiteSpace(_dtoDirName) ? "" : _dtoDirName + "/")}{c}';"));
+
+            if (!string.IsNullOrWhiteSpace(_clientGeneratorSettings.ClientBaseClass))
+            {
+                nswagTypes.Add(_clientGeneratorSettings.ClientBaseClass);
+            }
 
             nswagTypes.Add("throwException");
             if (nswagTypes.Any())
@@ -232,22 +234,6 @@ namespace NSwagTsSplitter
         /// <returns></returns>
         public string GenerateDtoClass(JsonSchema schema, string typeNameHint, out string className)
         {
-            //CodeArtifact modelClassArtifact =
-            //    _generateTypeMethodInfo.Invoke(_typeScriptGenerator, new object[] {schema, typeNameHint}) as
-            //        CodeArtifact;
-            //if (modelClassArtifact.Type == CodeArtifactType.Class || modelClassArtifact.Type == CodeArtifactType.Interface)
-            //{
-            //    var model = new ClassTemplateModel(modelClassArtifact.TypeName, typeNameHint, _clientGeneratorSettings.TypeScriptGeneratorSettings, _resolver, schema, _openApiDocument.Definitions);
-            //    var template = _clientGeneratorSettings.TypeScriptGeneratorSettings.CreateTemplate(modelClassArtifact.TypeName, model);
-
-            //    var type = _clientGeneratorSettings.TypeScriptGeneratorSettings.TypeStyle == TypeScriptTypeStyle.Interface
-            //        ? CodeArtifactType.Interface
-            //        : CodeArtifactType.Class;
-
-            //    modelClassArtifact = new CodeArtifact(modelClassArtifact.TypeName, model.BaseClass, type, CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Contract, template);
-            //}
-
-            //return string.Join("\n", types.Select(c => c.Code));
             string appendCode = string.Empty;
             var typeName = _resolver.GetOrGenerateTypeName(schema, typeNameHint);
 
@@ -325,7 +311,8 @@ namespace NSwagTsSplitter
                     .ForEach(c => builder.AppendLine($"import {{ {c} }} from './{c}';"));
                 if (nswagTypes.Any())
                 {
-                    builder.AppendLine($"import {{ {string.Join(",", nswagTypes.Distinct())} }} from './Utilities';");
+                    builder.AppendLine(
+                        $"import {{ {string.Join(",", nswagTypes.Distinct())} }} from '{(string.IsNullOrWhiteSpace(_dtoDirName) ? "./" : "../")}Utilities';");
                 }
 
                 builder.AppendLine();
@@ -337,6 +324,11 @@ namespace NSwagTsSplitter
                 return string.Join("\n", builder.ToString(),
                     template.Render(), appendCode);
             }
+        }
+
+        public void SetDtoPath(string pathName)
+        {
+            _dtoDirName = pathName;
         }
 
         //private string GetDtoClassHeaderForImport(JsonSchema schema)

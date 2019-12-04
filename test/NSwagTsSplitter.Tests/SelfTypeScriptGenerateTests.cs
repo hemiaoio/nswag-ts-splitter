@@ -53,6 +53,7 @@ namespace NSwagTsSplitter.Tests
         [Fact]
         public void GenerateClientClass_Test()
         {
+            _selfTypeScriptGenerator.SetDtoPath("Dto");
             var classCode = _selfTypeScriptGenerator.GenerateClientClass("Account");
             classCode.ShouldNotBeNullOrWhiteSpace();
             classCode.ShouldContain("IAccountServiceProxy");
