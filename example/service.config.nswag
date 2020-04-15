@@ -3,7 +3,7 @@
   "defaultVariables": null,
   "documentGenerator": {
     "fromDocument": {
-      "url": "https://api.d.shandaspace.com/swagger/v1/swagger.json?nswag=1",
+      "url": "https://localhost:44362/swagger/v1/swagger.json?nswag=1",
       "output": null
     }
   },
