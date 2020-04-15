@@ -77,7 +77,7 @@ namespace NSwagTsSplitter.Tests
         {
             var outputDirectory = Path.Combine(AppContext.BaseDirectory, "client");
             var clientClasses = _selfTypeScriptGenerator.GenerateClientClasses();
-            clientClasses.Count.ShouldBeGreaterThan(0);
+            clientClasses.ToList().Count.ShouldBeGreaterThan(0);
         }
 
         [Fact]

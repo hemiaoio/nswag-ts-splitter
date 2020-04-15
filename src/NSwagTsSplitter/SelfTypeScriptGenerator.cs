@@ -86,19 +86,16 @@ namespace NSwagTsSplitter
         /// Generate all classes
         /// </summary>
         /// <returns></returns>
-        public IDictionary<string, string> GenerateClientClasses()
+        public IEnumerable<KeyValuePair<string, string>> GenerateClientClasses()
         {
-            var classCodes = new Dictionary<string, string>();
             var operations = GetAllOperationModels();
             var controllerOperationGroups = operations.GroupBy(o => o.ControllerName);
             foreach (var controllerOperations in controllerOperationGroups)
             {
                 var controllerClassName = _clientGeneratorSettings.GenerateControllerName(controllerOperations.Key);
                 var clientCode = GenerateClientClass(controllerOperations.Key);
-                classCodes.Add(controllerClassName, clientCode);
+                yield return new KeyValuePair<string, string>(controllerClassName, clientCode);
             }
-
-            return classCodes;
         }
 
         /// <summary>
@@ -213,16 +210,13 @@ namespace NSwagTsSplitter
 
         #region DtoClass
 
-        public IDictionary<string, string> GenerateDtoClasses()
+        public IEnumerable<KeyValuePair<string, string>> GenerateDtoClasses()
         {
-            var dtos = new Dictionary<string, string>();
             foreach (var definition in _openApiDocument.Definitions)
             {
                 var code = GenerateDtoClass(definition.Value, definition.Key, out string className);
-                dtos.Add(className, code);
+                yield return new KeyValuePair<string, string>(className, code);
             }
-
-            return dtos;
         }
 
         /// <summary>

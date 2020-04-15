@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,11 +14,11 @@ namespace NSwagTsSplitter
         {
             // resolve the settings file
 
-            var currentDirectory = DynamicApis.DirectoryGetCurrentDirectory();
-            var configFiles = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag");
+
+            var configFiles = GetNSwagPath(args);
             if (!configFiles.Any())
             {
-                throw new FileNotFoundException("The runtime directory must be include *.nswag file.");
+                throw new FileNotFoundException("Please specify *.nswag file.");
             }
 
             DateTime levelTime = DateTime.Now;
@@ -64,8 +65,7 @@ namespace NSwagTsSplitter
             levelTime = DateTime.Now;
 
             // ClientClass
-            var classCodes = selfTypeScriptGenerator.GenerateClientClasses();
-            foreach (var @class in classCodes)
+            foreach (var @class in selfTypeScriptGenerator.GenerateClientClasses())
             {
                 tsPath = Path.Combine(outputDirectory, @class.Key + ".ts");
                 IOHelper.Delete(tsPath);
@@ -73,6 +73,62 @@ namespace NSwagTsSplitter
             }
 
             Console.WriteLine("Generate client files over, use time：{0}", (DateTime.Now - levelTime).TotalSeconds);
+        }
+
+
+        private static string[] GetNSwagPath(string[] args)
+        {
+            var files = new List<string>();
+
+            Queue<string> queue = new Queue<string>(args);
+            while (queue.Any())
+            {
+                var arg = queue.Dequeue();
+                if (arg.StartsWith("-"))
+                {
+                    if (arg.Equals("-c", StringComparison.OrdinalIgnoreCase))
+                    {
+                        while (true)
+                        {
+                            if (queue.Any())
+                            {
+                                break;
+                            }
+
+                            arg = queue.Dequeue();
+                            if (arg.StartsWith("-"))
+                            {
+                                break;
+                            }
+
+                            var tmpPath = arg;
+                            if (Path.IsPathRooted(tmpPath))
+                            {
+                                files.Add(tmpPath);
+                                continue;
+                            }
+
+                            if (arg.StartsWith('.'))
+                            {
+                                tmpPath = Path.Combine(Directory.GetCurrentDirectory(), arg);
+                                files.Add(tmpPath);
+                                continue;
+                            }
+
+                            tmpPath = Path.Combine(Directory.GetCurrentDirectory(), arg);
+                            files.Add(tmpPath);
+                        }
+                    }
+                }
+            }
+
+            if (files.Any())
+            {
+                return files.ToArray();
+            }
+
+            var currentDirectory = DynamicApis.DirectoryGetCurrentDirectory();
+            return DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag");
         }
     }
 }

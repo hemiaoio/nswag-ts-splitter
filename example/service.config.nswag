@@ -1,19 +1,19 @@
 ﻿{
   "runtime": "Default",
   "defaultVariables": null,
-  "swaggerGenerator": {
-    "fromSwagger": {
-      "url": "http://localhost:21023/swagger/v1/swagger.json",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "https://api.d.shandaspace.com/swagger/v1/swagger.json?nswag=1",
       "output": null
     }
   },
   "codeGenerators": {
-    "swaggerToTypeScriptClient": {
+    "openApiToTypeScriptClient": {
     "className": "{controller}ServiceProxy",
       "moduleName": "",
       "namespace": "",
-      "typeScriptVersion": 2.4,
-      "template": "JQueryPromises",
+      "typeScriptVersion": 2.7,
+      "template": "Axios",
       "promiseType": "Promise",
       "httpClass": "HttpClient",
       "useSingletonProvider": true,
@@ -23,10 +23,11 @@
       "nullValue": "Undefined",
       "generateClientClasses": true,
       "generateClientInterfaces": true,
-      "generateOptionalParameters": false,
+      "generateOptionalParameters": true,
       "exportTypes": true,
       "wrapDtoExceptions": false,
-      "clientBaseClass": null,
+      "exceptionClass": "SwaggerException",
+      "clientBaseClass": "ServiceProxyBase",
       "wrapResponses": false,
       "wrapResponseMethods": [],
       "generateResponseClasses": true,
@@ -45,20 +46,23 @@
       "extensionCode": "service.extensions.ts",
       "generateDefaultValues": true,
       "excludedTypeNames": [],
+      "excludedParameterNames": "",
       "handleReferences": false,
       "generateConstructorInterface": true,
       "convertConstructorInterfaceData": false,
       "importRequiredTypes": false,
-      "useGetBaseUrlMethod": false,
+      "useGetBaseUrlMethod": true,
       "baseUrlTokenName": "API_BASE_URL",
       "queryNullValue": "",
-      "templateDirectory": null,
+      "inlineNamedDictionaries": false,
+      "inlineNamedAny": false,
+      "templateDirectory": "./Templates",
       "typeNameGeneratorType": null,
       "propertyNameGeneratorType": null,
       "enumNameGeneratorType": null,
       "serviceHost": null,
       "serviceSchemes": null,
-      "output": "../src/libs/service-proxy"
+      "output": "./src/lib/api"
     }
   }
 }
