@@ -3,16 +3,18 @@
   <PropertyGroup>
     <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>7.1</LangVersion>
+    <PublishTrimmed>true</PublishTrimmed>
+    <IncludeSymbolsInSingleFile>true</IncludeSymbolsInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NJsonSchema" Version="10.0.23" />
-    <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="10.0.23" />
-    <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="13.0.6" />
-    <PackageReference Include="NSwag.Commands" Version="13.0.6" />
-    <PackageReference Include="NSwag.Core" Version="13.0.6" />
+    <PackageReference Include="NJsonSchema" Version="10.1.12" />
+    <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="10.1.12" />
+    <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="13.3.0" />
+    <PackageReference Include="NSwag.Commands" Version="13.3.0" />
+    <PackageReference Include="NSwag.Core" Version="13.3.0" />
   </ItemGroup>
 
 </Project>
