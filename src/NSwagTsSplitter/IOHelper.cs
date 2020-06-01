@@ -8,15 +8,16 @@ namespace NSwagTsSplitter
         /// <summary>
         /// create or update target directory
         /// </summary>
+        /// <param name="configFilePath"></param>
         /// <param name="outputDirectory"></param>
         /// <param name="isClear"></param>
         /// <returns></returns>
-        public static string CreateOrUpdatePath(string outputDirectory, bool isClear = false)
+        public static string CreateOrUpdatePath(string configFilePath, string outputDirectory, bool isClear = false)
         {
             var outputPath = outputDirectory;
             if (outputDirectory.StartsWith('.') || outputPath.IndexOf(":", StringComparison.OrdinalIgnoreCase) < 0)
             {
-                outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, outputDirectory);
+                outputPath = Path.Combine(configFilePath, outputDirectory);
             }
 
             if (!Directory.Exists(outputPath))
@@ -33,12 +34,12 @@ namespace NSwagTsSplitter
             return outputPath;
         }
 
-        public static bool ExistsFile(string outputDirectory, string fileName)
+        public static bool ExistsFile(string configFilePath, string outputDirectory, string fileName)
         {
             var outputPath = outputDirectory;
             if (outputDirectory.StartsWith('.') || outputPath.IndexOf(":", StringComparison.OrdinalIgnoreCase) < 0)
             {
-                outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, outputDirectory);
+                outputPath = Path.Combine(configFilePath, outputDirectory);
             }
 
             string filePath = Path.Combine(outputPath, fileName);

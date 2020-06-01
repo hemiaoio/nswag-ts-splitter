@@ -4,7 +4,6 @@ namespace NSwagTsSplitter
 {
     public static class Constant
     {
-
         public static readonly List<string> IgnoreModules = new List<string>()
         {
             "jQuery"
@@ -16,13 +15,12 @@ namespace NSwagTsSplitter
             "FileParameter",
             "FileResponse",
             "SwaggerException",
+            "ServiceBase"
         };
 
         public static readonly List<string> TsBaseType = new List<string>()
         {
-            "string","number","Date","undefined","any","boolean","void"
+            "string", "number", "Date", "undefined", "any", "boolean", "void"
         };
-
-
     }
 }
