@@ -57,13 +57,19 @@ namespace NSwagTsSplitter
         /// generate one service class
         /// </summary>
         /// <param name="className"></param>
+        /// <param name="operationModels"></param>
         /// <returns></returns>
-        public string GenerateClientClass(string className)
+        public string GenerateClientClass(string className,
+            IEnumerable<TypeScriptOperationModel> operationModels = null)
         {
-            var operations = GetAllOperationModels();
-            var controllerOperations = operations.GroupBy(o => o.ControllerName)
-                .First(c => c.Key == className);
-            return GenerateClientClassWithOperationModels(className, controllerOperations.ToList());
+            if (operationModels == null)
+            {
+                var operations = GetAllOperationModels();
+                operationModels = operations.GroupBy(o => o.ControllerName)
+                    .First(c => c.Key == className);
+            }
+
+            return GenerateClientClassWithOperationModels(className, operationModels.ToList());
         }
 
 
@@ -93,7 +99,7 @@ namespace NSwagTsSplitter
             foreach (var controllerOperations in controllerOperationGroups)
             {
                 var controllerClassName = _clientGeneratorSettings.GenerateControllerName(controllerOperations.Key);
-                var clientCode = GenerateClientClass(controllerOperations.Key);
+                var clientCode = GenerateClientClass(controllerOperations.Key, controllerOperations);
                 yield return new KeyValuePair<string, string>(controllerClassName, clientCode);
             }
         }
@@ -421,6 +427,13 @@ namespace NSwagTsSplitter
             tempClientCode.Add(new CodeArtifact("tsException", CodeArtifactType.Undefined,
                 CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Undefined,
                 "Placeholder Code For SwaggerException!"));
+            tempClientCode.Add(new CodeArtifact("clientBaseClass", CodeArtifactType.Class,
+                CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Utility,
+                $@"export class {_clientGeneratorSettings.ClientBaseClass} {{
+    public getBaseUrl(defaultUrl: string) {{
+        return process.env.VUE_APP_API_URL || defaultUrl;
+    }}
+}}"));
             var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), _openApiDocument,
                 _extensionCode, _clientGeneratorSettings, _resolver);
             var template =
@@ -465,35 +478,29 @@ namespace NSwagTsSplitter
             // type in Query will be thrown away, so directly take the source code to re-process the
             // type inside _resolver
             _openApiDocument.GenerateOperationIds();
-            return GetOperationModelsByPaths(_openApiDocument.Paths);
-        }
-
-        /// <summary>
-        /// get operations by paths
-        /// </summary>
-        /// <param name="paths"></param>
-        /// <returns></returns>
-        public virtual IEnumerable<TypeScriptOperationModel> GetOperationModelsByPaths(
-            IDictionary<string, OpenApiPathItem> paths)
-        {
-            return paths.SelectMany(pair => GetOperationModelsByPaths(pair.Key, pair.Value));
-        }
-
-        /// <summary>
-        /// Api path convert to operation model 
-        /// </summary>
-        /// <param name="apiPath"></param>
-        /// <param name="pathItem"></param>
-        /// <returns></returns>
-        public virtual IEnumerable<TypeScriptOperationModel> GetOperationModelsByPaths(string apiPath,
-            OpenApiPathItem pathItem)
-        {
-            var operations = pathItem
-                .Select(c => new
+            return _openApiDocument.Paths
+                .SelectMany(pair => pair.Value.Select(p => new
+                    {Path = pair.Key.TrimStart('/'), HttpMethod = p.Key, Operation = p.Value}))
+                .Select(tuple =>
                 {
-                    Path = apiPath.TrimStart('/'),
-                    HttpMethod = c.Key,
-                    Operation = c.Value
+                    var operationName =
+                        _clientGeneratorSettings.OperationNameGenerator.GetOperationName(_openApiDocument, tuple.Path,
+                            tuple.HttpMethod, tuple.Operation);
+                    if (operationName.EndsWith("Async"))
+                    {
+                        operationName = operationName.Substring(0, operationName.Length - "Async".Length);
+                    }
+
+                    var operationModel = new TypeScriptOperationModel(tuple.Operation, _clientGeneratorSettings,
+                        _typeScriptClientGenerator,
+                        _resolver); // CreateOperationModel(tuple.Operation, _clientGeneratorSettings);
+                    operationModel.ControllerName =
+                        _clientGeneratorSettings.OperationNameGenerator.GetClientName(_openApiDocument, tuple.Path,
+                            tuple.HttpMethod, tuple.Operation);
+                    operationModel.Path = tuple.Path;
+                    operationModel.HttpMethod = tuple.HttpMethod;
+                    operationModel.OperationName = operationName;
+                    return operationModel;
                 });
             var operationModels = operations
               .Select(c =>

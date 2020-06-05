@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -25,14 +26,14 @@ namespace NSwagTsSplitter
             DateTime levelTime = DateTime.Now;
             var nswagDocumentHelper = new NSWagDocumentHelper();
             var swaggerDocumentHelper = new SwaggerDocumentHelper();
-            string tsPath = string.Empty;
-
+            var configFile = configFiles.First();
+            var configFilePath = Path.GetFullPath(configFile);
             // load config
-            var nSwagDocument = await nswagDocumentHelper.LoadDocumentFromFileAsync(configFiles.FirstOrDefault());
+            var nSwagDocument = await nswagDocumentHelper.LoadDocumentFromFileAsync(configFile);
             Console.WriteLine("NSwag config file loaded, use time：{0}ms", (DateTime.Now - levelTime).TotalSeconds);
-            var outputDirectory = IOHelper.CreateOrUpdatePath(nSwagDocument.CodeGenerators
+            var outputDirectory = IOHelper.CreateOrUpdatePath(configFilePath, nSwagDocument.CodeGenerators
                 .OpenApiToTypeScriptClientCommand.OutputFilePath);
-            IOHelper.CreateOrUpdatePath(outputDirectory);
+            IOHelper.CreateOrUpdatePath(configFilePath, outputDirectory);
             levelTime = DateTime.Now;
 
             // fetch swagger
@@ -64,7 +65,7 @@ namespace NSwagTsSplitter
 
             // Utilities
             var utilitiesCode = selfTypeScriptGenerator.GenerateUtilities();
-            tsPath = Path.Combine(outputDirectory, "Utilities.ts");
+            var tsPath = Path.Combine(outputDirectory, "Utilities.ts");
             IOHelper.Delete(tsPath);
             await File.WriteAllTextAsync(tsPath, utilitiesCode, Encoding.UTF8);
             Console.WriteLine("Generate Utilities.ts complate, use time：{0}ms",
@@ -146,7 +147,30 @@ namespace NSwagTsSplitter
             }
 
             var currentDirectory = DynamicApis.DirectoryGetCurrentDirectory();
-            return DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag");
+            Console.WriteLine(currentDirectory);
+            files = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag").ToList();
+            if (files.Any())
+            {
+                return files.ToArray();
+            }
+
+            currentDirectory = AppContext.BaseDirectory;
+            Console.WriteLine(currentDirectory);
+            files = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag").ToList();
+            if (files.Any())
+            {
+                return files.ToArray();
+            }
+
+            currentDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+            Console.WriteLine(currentDirectory);
+            files = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag").ToList();
+            if (files.Any())
+            {
+                return files.ToArray();
+            }
+
+            return files.ToArray();
         }
     }
 }
