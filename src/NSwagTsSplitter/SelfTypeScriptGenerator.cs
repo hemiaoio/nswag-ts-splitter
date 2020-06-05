@@ -47,8 +47,8 @@ namespace NSwagTsSplitter
             _extensionCode = new TypeScriptExtensionCode(
                 clientGeneratorSettings.TypeScriptGeneratorSettings.ExtensionCode,
                 (clientGeneratorSettings.TypeScriptGeneratorSettings.ExtendedClasses ?? new string[] { })
-                .Concat(new[] {clientGeneratorSettings.ConfigurationClass}).ToArray(),
-                new[] {clientGeneratorSettings.ClientBaseClass});
+                .Concat(new[] { clientGeneratorSettings.ConfigurationClass }).ToArray(),
+                new[] { clientGeneratorSettings.ClientBaseClass });
         }
 
         #region ClientClass
@@ -122,7 +122,7 @@ namespace NSwagTsSplitter
         public string GenerateClientClassWithNameAndOperations(string controllerName,
             string controllerClassName, IEnumerable<TypeScriptOperationModel> operations)
         {
-            object[] paras = {controllerName, controllerClassName, operations};
+            object[] paras = { controllerName, controllerClassName, operations };
             var codes =
                 _generateClientTypesMethodInfo.Invoke(_typeScriptClientGenerator, paras) as IEnumerable<CodeArtifact>;
 
@@ -446,7 +446,6 @@ namespace NSwagTsSplitter
             var operationModel =
                 new TypeScriptOperationModel(openApiOperation.Operation, _clientGeneratorSettings,
                     _typeScriptClientGenerator, _resolver);
-
             operationModel.ControllerName = _clientGeneratorSettings.OperationNameGenerator.GetClientName(
                 _openApiDocument, openApiOperation.Path, openApiOperation.Method, openApiOperation.Operation);
             operationModel.Path = openApiOperation.Path;
@@ -489,27 +488,29 @@ namespace NSwagTsSplitter
         public virtual IEnumerable<TypeScriptOperationModel> GetOperationModelsByPaths(string apiPath,
             OpenApiPathItem pathItem)
         {
-            return pathItem
+            var operations = pathItem
                 .Select(c => new
                 {
                     Path = apiPath.TrimStart('/'),
                     HttpMethod = c.Key,
                     Operation = c.Value
-                })
-                .Select(c =>
-                {
-                    var operationModel =
-                        new TypeScriptOperationModel(c.Operation, _clientGeneratorSettings,
-                            _typeScriptClientGenerator, _resolver);
-
-                    operationModel.ControllerName = _clientGeneratorSettings.OperationNameGenerator.GetClientName(
-                        _openApiDocument, c.Path, c.HttpMethod, c.Operation);
-                    operationModel.Path = c.Path;
-                    operationModel.HttpMethod = c.HttpMethod;
-                    operationModel.OperationName = _clientGeneratorSettings.OperationNameGenerator.GetOperationName(
-                        _openApiDocument, c.Path, c.HttpMethod, c.Operation);
-                    return operationModel;
                 });
+            var operationModels = operations
+              .Select(c =>
+              {
+                  var operationModel =
+                      new TypeScriptOperationModel(c.Operation, _clientGeneratorSettings,
+                          _typeScriptClientGenerator, _resolver);
+
+                  operationModel.ControllerName = _clientGeneratorSettings.OperationNameGenerator.GetClientName(
+                      _openApiDocument, c.Path, c.HttpMethod, c.Operation);
+                  operationModel.Path = c.Path;
+                  operationModel.HttpMethod = c.HttpMethod;
+                  operationModel.OperationName = _clientGeneratorSettings.OperationNameGenerator.GetOperationName(
+                      _openApiDocument, c.Path, c.HttpMethod, c.Operation);
+                  return operationModel;
+              });
+            return operationModels;
         }
     }
 }

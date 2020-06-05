@@ -20,7 +20,7 @@ namespace NSwagTsSplitter
 
         public static readonly List<string> TsBaseType = new List<string>()
         {
-            "string","number","Date","undefined","any","boolean","void"
+            "string","number","Date","undefined","any","boolean","void","{ [key: string]: any; }"
         };
 
 
