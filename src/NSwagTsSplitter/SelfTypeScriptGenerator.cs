@@ -502,22 +502,6 @@ namespace NSwagTsSplitter
                     operationModel.OperationName = operationName;
                     return operationModel;
                 });
-            var operationModels = operations
-              .Select(c =>
-              {
-                  var operationModel =
-                      new TypeScriptOperationModel(c.Operation, _clientGeneratorSettings,
-                          _typeScriptClientGenerator, _resolver);
-
-                  operationModel.ControllerName = _clientGeneratorSettings.OperationNameGenerator.GetClientName(
-                      _openApiDocument, c.Path, c.HttpMethod, c.Operation);
-                  operationModel.Path = c.Path;
-                  operationModel.HttpMethod = c.HttpMethod;
-                  operationModel.OperationName = _clientGeneratorSettings.OperationNameGenerator.GetOperationName(
-                      _openApiDocument, c.Path, c.HttpMethod, c.Operation);
-                  return operationModel;
-              });
-            return operationModels;
         }
     }
 }
