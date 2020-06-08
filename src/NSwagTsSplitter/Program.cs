@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NJsonSchema.Infrastructure;
+using NSwag;
 
 namespace NSwagTsSplitter
 {
@@ -38,6 +39,23 @@ namespace NSwagTsSplitter
             // fetch swagger
             var swaggerDocument =
                 await swaggerDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
+            if (!string.IsNullOrWhiteSpace(swaggerDocument.BaseUrl) && !swaggerDocument.BaseUrl.StartsWith("http"))
+            {
+                if (!string.IsNullOrWhiteSpace(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url))
+                {
+                    var baseUrl = swaggerDocument.BaseUrl;
+                    if (baseUrl.EndsWith("/"))
+                    {
+                        baseUrl = baseUrl.Remove(baseUrl.Length - 1);
+                    }
+                    var uri = new Uri(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
+                    swaggerDocument.Servers.Clear();
+                    swaggerDocument.Servers.Add(new OpenApiServer()
+                    {
+                        Url = uri.Scheme + "://" + baseUrl
+                    });
+                }
+            }
             Console.WriteLine("Swagger content loaded, use time：{0}ms", (DateTime.Now - levelTime).TotalSeconds);
             levelTime = DateTime.Now;
 
@@ -91,7 +109,7 @@ namespace NSwagTsSplitter
                     {
                         while (true)
                         {
-                            if (queue.Any())
+                            if (!queue.Any())
                             {
                                 break;
                             }

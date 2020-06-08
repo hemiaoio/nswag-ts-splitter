@@ -47,8 +47,8 @@ namespace NSwagTsSplitter
             _extensionCode = new TypeScriptExtensionCode(
                 clientGeneratorSettings.TypeScriptGeneratorSettings.ExtensionCode,
                 (clientGeneratorSettings.TypeScriptGeneratorSettings.ExtendedClasses ?? new string[] { })
-                .Concat(new[] {clientGeneratorSettings.ConfigurationClass}).ToArray(),
-                new[] {clientGeneratorSettings.ClientBaseClass});
+                .Concat(new[] { clientGeneratorSettings.ConfigurationClass }).ToArray(),
+                new[] { clientGeneratorSettings.ClientBaseClass });
         }
 
         #region ClientClass
@@ -128,7 +128,7 @@ namespace NSwagTsSplitter
         public string GenerateClientClassWithNameAndOperations(string controllerName,
             string controllerClassName, IEnumerable<TypeScriptOperationModel> operations)
         {
-            object[] paras = {controllerName, controllerClassName, operations};
+            object[] paras = { controllerName, controllerClassName, operations };
             var codes =
                 _generateClientTypesMethodInfo.Invoke(_typeScriptClientGenerator, paras) as IEnumerable<CodeArtifact>;
 
@@ -459,7 +459,6 @@ namespace NSwagTsSplitter
             var operationModel =
                 new TypeScriptOperationModel(openApiOperation.Operation, _clientGeneratorSettings,
                     _typeScriptClientGenerator, _resolver);
-
             operationModel.ControllerName = _clientGeneratorSettings.OperationNameGenerator.GetClientName(
                 _openApiDocument, openApiOperation.Path, openApiOperation.Method, openApiOperation.Operation);
             operationModel.Path = openApiOperation.Path;
