@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+
 using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NJsonSchema.CodeGeneration.TypeScript;
 using NJsonSchema.CodeGeneration.TypeScript.Models;
+
 using NSwag;
 using NSwag.CodeGeneration.TypeScript;
 using NSwag.CodeGeneration.TypeScript.Models;
@@ -19,7 +21,6 @@ namespace NSwagTsSplitter
         private readonly TypeScriptTypeResolver _resolver;
         private readonly OpenApiDocument _openApiDocument;
         private readonly TypeScriptClientGenerator _typeScriptClientGenerator;
-        private readonly TypeScriptGenerator _typeScriptGenerator;
         private readonly TypeScriptExtensionCode _extensionCode;
         private string _utilitiesModuleName = "Utilities";
         private string _dtoDirName = "";
@@ -37,13 +38,16 @@ namespace NSwagTsSplitter
             OpenApiDocument openApiDocument)
         {
             _clientGeneratorSettings = clientGeneratorSettings;
+            if (_clientGeneratorSettings.ExcludedParameterNames == null)
+            {
+                _clientGeneratorSettings.ExcludedParameterNames = new string[0];
+            }
+            Constant.TsBaseType.AddRange(_clientGeneratorSettings.ExcludedParameterNames);
             _resolver = new TypeScriptTypeResolver(clientGeneratorSettings.TypeScriptGeneratorSettings);
             _openApiDocument = openApiDocument;
             _resolver.RegisterSchemaDefinitions(_openApiDocument.Definitions);
             _typeScriptClientGenerator =
                 new TypeScriptClientGenerator(_openApiDocument, _clientGeneratorSettings, _resolver);
-            _typeScriptGenerator = new TypeScriptGenerator(_openApiDocument,
-                clientGeneratorSettings.TypeScriptGeneratorSettings, _resolver);
             _extensionCode = new TypeScriptExtensionCode(
                 clientGeneratorSettings.TypeScriptGeneratorSettings.ExtensionCode,
                 (clientGeneratorSettings.TypeScriptGeneratorSettings.ExtendedClasses ?? new string[] { })
@@ -191,7 +195,9 @@ namespace NSwagTsSplitter
                 }
             }
 
-            typeNames.Distinct().Where(c => !nswagTypes.Contains(c))
+            typeNames.Where(c => !c.StartsWith("{ [key: "))
+                .Distinct()
+                .Where(c => !nswagTypes.Contains(c))
                 .ForEach(c =>
                     builder.AppendLine(
                         $"import {{ {c} }} from './{(string.IsNullOrWhiteSpace(_dtoDirName) ? "" : _dtoDirName + "/")}{c}';"));
@@ -480,7 +486,7 @@ namespace NSwagTsSplitter
             _openApiDocument.GenerateOperationIds();
             return _openApiDocument.Paths
                 .SelectMany(pair => pair.Value.Select(p => new
-                    {Path = pair.Key.TrimStart('/'), HttpMethod = p.Key, Operation = p.Value}))
+                { Path = pair.Key.TrimStart('/'), HttpMethod = p.Key, Operation = p.Value }))
                 .Select(tuple =>
                 {
                     var operationName =

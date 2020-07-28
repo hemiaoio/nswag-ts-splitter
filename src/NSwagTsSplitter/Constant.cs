@@ -18,9 +18,9 @@ namespace NSwagTsSplitter
             "ServiceBase"
         };
 
-        public static readonly List<string> TsBaseType = new List<string>()
+        public static List<string> TsBaseType = new List<string>()
         {
-            "string","number","Date","undefined","any","boolean","void","{ [key: string]: any; }"
+            "string","number","Date","undefined","any","boolean","void","{ [key: string]: any; }","{ [key: string]: string; }"
         };
     }
 }
