@@ -132,7 +132,29 @@ namespace NSwagTsSplitter.Tests
         public void GenerateDtoClasses_Test()
         {
             var result = _selfTypeScriptGenerator.GenerateDtoClasses();
-            result.Count.ShouldBeGreaterThan(0);
+            result.Count().ShouldBeGreaterThan(0);
+        }
+
+        [Fact]
+        public void GenerateDtoClasses_ShouldBeImportParentType_Test()
+        {
+            var result = _selfTypeScriptGenerator.GenerateDtoClasses();
+            var tags = result.Where(c => c.Key.StartsWith("Tag"));
+            var tag = tags.FirstOrDefault(c => c.Key.Equals("TagDto"));
+            var contains = tag.Value
+                .Contains("import { ITagBasicDto,TagBasicDto } from './TagBasicDto';");
+            contains.ShouldBe(true);
+        }
+
+        [Fact]
+        public void GenerateDtoClasses_ShouldBeImportParentType_With_Signal_Test()
+        {
+            var result = _selfTypeScriptGenerator.GenerateDtoClasses();
+            var tags = result.Where(c => c.Key.StartsWith("UserLogin"));
+            var tag = tags.FirstOrDefault(c => c.Key.Equals("UserLoginAttemptDtoListResultDto"));
+            tag.Value.Split("\r")[1].Replace("\n", "").ShouldBe(string.Empty);
+            //.Contains("import { UserLoginAttemptDto } from './UserLoginAttemptDto';");
+            //contains.ShouldBe(true);
         }
 
         [Fact]

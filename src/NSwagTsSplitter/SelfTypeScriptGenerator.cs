@@ -258,9 +258,22 @@ namespace NSwagTsSplitter
             {
                 var model = new ClassTemplateModel(typeName, typeNameHint, _resolver.Settings, _resolver, schema,
                     schema);
-                List<string> typeNames = new List<string>();
+                Dictionary<string, List<string>> typeNames = new Dictionary<string, List<string>>();
+                List<string> enumNames = new List<string>();
                 List<string> nswagTypes = new List<string>();
                 StringBuilder builder = new StringBuilder();
+                foreach (var parent in schema.AllOf)
+                {
+                    var type = _resolver.GetOrGenerateTypeName(parent, string.Empty);
+                    var list = new List<string>();
+                    if (_resolver.Settings.GenerateConstructorInterface)
+                    {
+                        list.Add(_resolver.ResolveConstructorInterfaceName(parent, true, string.Empty));
+                    }
+                    list.Add(type);
+
+                    typeNames.AddIfNot(type, list);
+                }
                 foreach (var actualProperty in schema.ActualProperties)
                 {
                     if (actualProperty.Value.IsEnumeration && actualProperty.Value.Reference == null)
@@ -277,7 +290,7 @@ namespace NSwagTsSplitter
                     if (!Constant.TsBaseType.Contains(propertyType) && !property.IsDictionary &&
                         !actualProperty.Value.IsEnumeration)
                     {
-                        typeNames.Add(propertyType);
+                        typeNames.AddIfNot(propertyType, new List<string> { propertyType });
                     }
 
                     if (Constant.UtilitiesModules.Contains(propertyType))
@@ -291,7 +304,7 @@ namespace NSwagTsSplitter
                             : property.DictionaryItemType;
                     if (!Constant.TsBaseType.Contains(propertyDictionaryItemType))
                     {
-                        typeNames.Add(propertyDictionaryItemType);
+                        typeNames.AddIfNot(propertyDictionaryItemType, new List<string>() { propertyDictionaryItemType });
                     }
 
                     if (Constant.UtilitiesModules.Contains(propertyDictionaryItemType))
@@ -304,7 +317,7 @@ namespace NSwagTsSplitter
                         : property.ArrayItemType;
                     if (!Constant.TsBaseType.Contains(propertyArrayItemType))
                     {
-                        typeNames.Add(propertyArrayItemType);
+                        typeNames.AddIfNot(propertyArrayItemType, new List<string>() { propertyArrayItemType });
                     }
 
                     if (Constant.UtilitiesModules.Contains(propertyArrayItemType))
@@ -313,7 +326,9 @@ namespace NSwagTsSplitter
                     }
                 }
 
-                typeNames.Distinct().Where(c => !nswagTypes.Contains(c)).Where(c => c != typeName).ToList()
+                typeNames.Where(c => !nswagTypes.Contains(c.Key)).Where(c => c.Key != typeName).ToList()
+                    .ForEach(c => builder.AppendLine($"import {{ {string.Join(",", c.Value)} }} from './{c.Key}';"));
+                enumNames.Distinct().Where(c => !nswagTypes.Contains(c)).Where(c => c != typeName).ToList()
                     .ForEach(c => builder.AppendLine($"import {{ {c} }} from './{c}';"));
                 if (nswagTypes.Any())
                 {
@@ -436,10 +451,10 @@ namespace NSwagTsSplitter
             tempClientCode.Add(new CodeArtifact("clientBaseClass", CodeArtifactType.Class,
                 CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Utility,
                 $@"export class {_clientGeneratorSettings.ClientBaseClass} {{
-    public getBaseUrl(defaultUrl: string) {{
-        return process.env.VUE_APP_API_URL || defaultUrl;
-    }}
-}}"));
+                    public getBaseUrl(defaultUrl: string) {{
+                        return process.env.VUE_APP_API_URL || defaultUrl;
+                    }}
+                }}"));
             var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), _openApiDocument,
                 _extensionCode, _clientGeneratorSettings, _resolver);
             var template =
