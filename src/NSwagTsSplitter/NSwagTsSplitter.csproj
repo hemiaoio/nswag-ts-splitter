@@ -3,15 +3,18 @@
   <PropertyGroup>
     <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NJsonSchema" Version="10.3.2" />
-    <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="10.3.2" />
-    <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="13.9.4" />
-    <PackageReference Include="NSwag.Commands" Version="13.9.4" />
-    <PackageReference Include="NSwag.Core" Version="13.9.4" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+    <PackageReference Include="NJsonSchema" Version="10.7.2" />
+    <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="10.7.2" />
+    <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="13.16.1" />
+    <PackageReference Include="NSwag.Commands" Version="13.16.1" />
+    <PackageReference Include="NSwag.Core" Version="13.16.1" />
+    <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
   </ItemGroup>
 
 </Project>

@@ -1,9 +1,12 @@
-﻿using System;
+﻿
+using System;
 using System.IO;
 
-namespace NSwagTsSplitter
+using NSwag.Commands;
+
+namespace NSwagTsSplitter.Helpers
 {
-    public static class IOHelper
+    public static class IoHelper
     {
         /// <summary>
         /// create or update target directory
@@ -14,10 +17,11 @@ namespace NSwagTsSplitter
         /// <returns></returns>
         public static string CreateOrUpdatePath(string configFilePath, string outputDirectory, bool isClear = false)
         {
-            var outputPath = outputDirectory;
+            var outputPath = outputDirectory.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+            configFilePath = Path.GetDirectoryName(configFilePath);
             if (outputDirectory.StartsWith('.') || outputPath.IndexOf(":", StringComparison.OrdinalIgnoreCase) < 0)
             {
-                outputPath = Path.Combine(configFilePath, outputDirectory);
+                outputPath = Path.GetFullPath(Path.Combine(configFilePath, outputPath));
             }
 
             if (!Directory.Exists(outputPath))
@@ -25,10 +29,10 @@ namespace NSwagTsSplitter
                 Directory.CreateDirectory(outputPath);
             }
 
-            if (Directory.Exists(outputDirectory) && isClear)
+            if (Directory.Exists(outputPath) && isClear)
             {
                 Delete(outputPath);
-                Directory.CreateDirectory(outputDirectory);
+                Directory.CreateDirectory(outputPath);
             }
 
             return outputPath;
@@ -57,6 +61,12 @@ namespace NSwagTsSplitter
             {
                 Directory.Delete(path, true);
             }
+        }
+
+        public static string ReadOutputPath(NSwagDocument nSwagDocument, string configFilePath)
+        {
+            return CreateOrUpdatePath(configFilePath, nSwagDocument.CodeGenerators
+                .OpenApiToTypeScriptClientCommand.OutputFilePath);
         }
     }
 }

@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿
+using System.Collections.Generic;
 
-namespace NSwagTsSplitter
+namespace NSwagTsSplitter.Contants
 {
     public static class Constant
     {
