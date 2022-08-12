@@ -1,14 +1,12 @@
-﻿using System;
-using NSwag.CodeGeneration.TypeScript;
+﻿using NSwag.CodeGeneration.TypeScript;
 using NSwag;
 using NJsonSchema.CodeGeneration.TypeScript;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using NSwagTsSplitter.Helpers;
 using System.IO;
+using System.Linq;
 using System.Text;
-using System.Threading;
 using NJsonSchema.CodeGeneration;
 using NSwag.CodeGeneration.TypeScript.Models;
 
@@ -50,7 +48,7 @@ public class UtilitiesScriptGenerator
 
     public string GenerateUtilities()
     {
-        //var tempClientCode = "Placeholder Code For SwaggerException!";
+        ////var tempClientCode = "Placeholder Code For SwaggerException!";
         var tempClientCode = new List<CodeArtifact>();
         tempClientCode.Add(new CodeArtifact("tsException", CodeArtifactType.Undefined,
             CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Undefined,
@@ -58,8 +56,8 @@ public class UtilitiesScriptGenerator
         tempClientCode.Add(new CodeArtifact("clientBaseClass", CodeArtifactType.Class,
             CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Utility,
             $@"export class {_clientGeneratorSettings.ClientBaseClass} {{
-                    public getBaseUrl(defaultUrl: string) {{
-                        return process.env.API_URL || defaultUrl;
+                    public getBaseUrl(defaultUrl: string, fetchBaseUrl?:string) {{
+                        return '{_openApiDocument.Servers?.FirstOrDefault()?.Url}' || defaultUrl || fetchBaseUrl;
                     }}
                 }}"));
         var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), _openApiDocument,

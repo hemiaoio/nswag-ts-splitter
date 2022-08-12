@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace NSwagTsSplitter.Generators;
 
@@ -60,5 +61,33 @@ public class CommonCodeGenerator
             }
         }
         return builder.ToString();
+    }
+
+    public static async Task GenerateIndexAsync(string outputDirectory)
+    {
+        var indexFilePath = Path.Combine(outputDirectory, "index.ts");
+        if (File.Exists(indexFilePath))
+        {
+            File.Delete(indexFilePath);
+        }
+
+        Log.Information("Remove index from [{0}]:", outputDirectory);
+        var builder = new StringBuilder();
+        var dirs = Directory.GetDirectories(outputDirectory);
+        foreach (var dir in dirs)
+        {
+            if (File.Exists(Path.Combine(dir, "index.ts")))
+            {
+                builder.AppendLine($"export * from './{Path.GetFileNameWithoutExtension(dir)}'");
+            }
+        }
+
+        var files = Directory.GetFiles(outputDirectory);
+        foreach (var file in files)
+        {
+            builder.AppendLine($"export * from './{Path.GetFileNameWithoutExtension(file)}'");
+        }
+
+        await File.WriteAllTextAsync(indexFilePath, builder.ToString(), Encoding.UTF8);
     }
 }

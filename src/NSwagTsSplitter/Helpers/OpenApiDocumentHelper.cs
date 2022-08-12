@@ -12,7 +12,11 @@ public class OpenApiDocumentHelper
     {
         using HttpClient httpClient = new HttpClient();
         OpenApiDocument openApiDocument = await OpenApiDocument.FromJsonAsync(await httpClient.GetStringAsync(url));
-        if (string.IsNullOrWhiteSpace(openApiDocument.BaseUrl) || openApiDocument.BaseUrl.StartsWith("http"))
+        if (string.IsNullOrWhiteSpace(openApiDocument.BaseUrl))
+        {
+            return openApiDocument;
+        }
+        if (openApiDocument.BaseUrl.StartsWith("http"))
             return openApiDocument;
         string str = openApiDocument.BaseUrl;
         if (str.EndsWith("/"))

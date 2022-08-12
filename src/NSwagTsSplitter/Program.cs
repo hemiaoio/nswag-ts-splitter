@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 using NSwagTsSplitter.Contants;
@@ -21,20 +21,18 @@ namespace NSwagTsSplitter
 
             // resolve the settings file
 
-            var configFiles = ConfigHelper.GetNSwagPath(args);
-            if (!configFiles.Any() || !configFiles.All(File.Exists))
+            var config = ArgumentsHelper.ReadArgs(args);
+            if (string.IsNullOrWhiteSpace(config.ConfigPath))
             {
                 throw new FileNotFoundException("Please specify *.nswag file.");
             }
-            foreach (var file in configFiles)
+            if (!File.Exists(config.ConfigPath))
             {
-                Log.Information("Read config files:[{0}]", file);
+                throw new FileNotFoundException($"Not found config file from :{config.ConfigPath}");
             }
-
-
+            Log.Information("Read config files:[{0}]", config.ConfigPath);
             Stopwatch stopwatch = Stopwatch.StartNew();
-            var configFile = configFiles.First();
-            var configFilePath = Path.GetFullPath(configFile);
+            var configFilePath = Path.GetFullPath(config.ConfigPath);
             Log.Information("Use config file:[{0}]", configFilePath);
             var nSwagDocument = await NsWagDocumentHelper.LoadDocumentFromFileAsync(configFilePath);
             stopwatch.Stop();
@@ -43,8 +41,7 @@ namespace NSwagTsSplitter
             Log.Information("Output directory is :[{0}]", outputDirectory);
             stopwatch.Restart();
             // fetch swagger
-            var swaggerDocument =
-                await OpenApiDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
+            var swaggerDocument = await OpenApiDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
             stopwatch.Stop();
             Log.Information("Swagger content loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
             stopwatch.Restart();
@@ -60,6 +57,7 @@ namespace NSwagTsSplitter
             stopwatch.Restart();
             // DtoClass
             var modelsScriptGenerator = new ModelsScriptGenerator(settings, swaggerDocument);
+            modelsScriptGenerator.SetDirName(config.DtoPath);
             await modelsScriptGenerator.GenerateDtoFilesAsync(outputDirectory);
             stopwatch.Stop();
             Log.Information("Generate dto files over, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
@@ -70,6 +68,11 @@ namespace NSwagTsSplitter
             await clientsScriptGenerator.GenerateClientClassFilesAsync(outputDirectory);
             stopwatch.Stop();
             Log.Information("Generate client files over, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
+            stopwatch.Restart();
+            await CommonCodeGenerator.GenerateIndexAsync(outputDirectory);
+            stopwatch.Stop();
+            Log.Information("Generate index file over, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
+
         }
 
 

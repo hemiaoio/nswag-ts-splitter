@@ -7,13 +7,11 @@ using NSwag.CodeGeneration.TypeScript.Models;
 using NSwagTsSplitter.Helpers;
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using NSwagTsSplitter.Contants;
 using NJsonSchema.CodeGeneration;
@@ -38,11 +36,7 @@ namespace NSwagTsSplitter.Generators
         {
             _settings = settings;
             _openApiDocument = openApiDocument;
-            if (settings.ExcludedParameterNames == null)
-            {
-                settings.ExcludedParameterNames = Array.Empty<string>();
-            }
-
+            settings.ExcludedParameterNames ??= Array.Empty<string>();
             Constant.TsBaseType.AddRange(settings.ExcludedParameterNames);
             _resolver = new TypeScriptTypeResolver(settings.TypeScriptGeneratorSettings);
             _openApiDocument = openApiDocument;
@@ -68,8 +62,6 @@ namespace NSwagTsSplitter.Generators
                 string path = Path.Combine(outputDirectory, clientClass.Key + ".ts");
                 IoHelper.Delete(path);
                 var classCode = clientClass.Value;
-
-
                 var commonImportCode = await CommonCodeGenerator.GetCommonImportFromUtilitiesAsync(outputDirectory, _utilitiesModuleName);
                 classCode = commonImportCode + classCode;// CommonCodeGenerator.AppendImport(classCode, );
                 classCode = CommonCodeGenerator.AppendDisabledLint(classCode);
@@ -199,11 +191,19 @@ namespace NSwagTsSplitter.Generators
             {
                 nswagTypes.Add("isAxiosError");
             }
+            if (_typeScriptClientGenerator.Settings.Template == TypeScriptTemplate.Angular)
+            {
+                nswagTypes.Add("blobToText");
+                if (_typeScriptClientGenerator.Settings.UseGetBaseUrlMethod)
+                {
+                    nswagTypes.Add("API_BASE_URL");
+                }
+            }
             nswagTypes.Add("throwException");
             if (nswagTypes.Any())
             {
                 builder.AppendLine(
-                    $"import {{ {string.Join(",", nswagTypes.Distinct())} }} from './{_utilitiesModuleName}';");
+                    $"import {{ {string.Join(", ", nswagTypes.Distinct())} }} from './{_utilitiesModuleName}';");
             }
 
             builder.AppendLine();
@@ -221,9 +221,7 @@ namespace NSwagTsSplitter.Generators
             string controllerClassName, IEnumerable<TypeScriptOperationModel> operations)
         {
             object[] paras = { controllerName, controllerClassName, operations };
-            var codes =
-                _generateClientTypesMethodInfo.Invoke(_typeScriptClientGenerator, paras) as IEnumerable<CodeArtifact>;
-
+            var codes = _generateClientTypesMethodInfo.Invoke(_typeScriptClientGenerator, paras) as IEnumerable<CodeArtifact>;
             return string.Join("\n", codes.Select(c => c.Code));
         }
 

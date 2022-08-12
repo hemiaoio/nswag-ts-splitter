@@ -27,8 +27,10 @@ public class ModelsScriptGenerator
 
     public ModelsScriptGenerator(TypeScriptClientGeneratorSettings settings, OpenApiDocument openApiDocument)
     {
-        _resolver = new TypeScriptTypeResolver(settings.TypeScriptGeneratorSettings);
+
         _openApiDocument = openApiDocument;
+        _resolver = new TypeScriptTypeResolver(settings.TypeScriptGeneratorSettings);
+        _resolver.RegisterSchemaDefinitions(_openApiDocument.Definitions);
     }
 
     public string DirName => _dtoDirName;
@@ -37,12 +39,28 @@ public class ModelsScriptGenerator
 
     public async Task GenerateDtoFilesAsync(string outputDirectory)
     {
+        var targetFolder = Path.Combine(outputDirectory, _dtoDirName);
+        if (!Directory.Exists(targetFolder))
+        {
+            Directory.CreateDirectory(targetFolder);
+        }
+
+        var fileNames = new List<string>();
         foreach (var dtoClass in GenerateDtoClasses())
         {
-            string path = Path.Combine(outputDirectory, _dtoDirName, dtoClass.Key + ".ts");
+            string path = Path.Combine(targetFolder, dtoClass.Key + ".ts");
             IoHelper.Delete(path);
             await File.WriteAllTextAsync(path, dtoClass.Value, Encoding.UTF8);
+            fileNames.Add(dtoClass.Key);
         }
+        string indexFile = Path.Combine(targetFolder, "index.ts");
+        if (!string.IsNullOrWhiteSpace(_dtoDirName))
+        {
+            IoHelper.Delete(indexFile);
+            await File.AppendAllLinesAsync(indexFile, fileNames.Select(c => $"export * from './{c}';"), Encoding.UTF8);
+        }
+
+
     }
 
     public IEnumerable<KeyValuePair<string, string>> GenerateDtoClasses()

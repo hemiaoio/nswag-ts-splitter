@@ -9,8 +9,38 @@ using Serilog;
 
 namespace NSwagTsSplitter.Helpers;
 
-public class ConfigHelper
+public class ArgumentsHelper
 {
+    public static GeneratorConfigModel ReadArgs(string[] args)
+    {
+        string currentDirectory = DynamicApis.DirectoryGetCurrentDirectory();
+        var model = new GeneratorConfigModel();
+        Queue<string> queue = new Queue<string>(args);
+        while (queue.Any())
+        {
+            var arg = queue.Dequeue();
+            if (string.IsNullOrWhiteSpace(arg))
+            {
+                continue;
+            }
+            if (arg.Equals("-c", StringComparison.OrdinalIgnoreCase) || arg.Equals("--config", StringComparison.OrdinalIgnoreCase))
+            {
+                model.SetConfigPath(queue.Dequeue(), currentDirectory);
+            }
+
+            if (arg.Equals("-dp", StringComparison.OrdinalIgnoreCase) ||
+                arg.Equals("--dto-path", StringComparison.OrdinalIgnoreCase))
+            {
+                model.DtoPath = queue.Dequeue();
+            }
+            if (arg.Equals("-sp", StringComparison.OrdinalIgnoreCase) ||
+                arg.Equals("--service-path", StringComparison.OrdinalIgnoreCase))
+            {
+                model.ServicePath = queue.Dequeue();
+            }
+        }
+        return model;
+    }
     public static string[] GetNSwagPath(string[] args)
     {
         var files = new List<string>();
@@ -20,7 +50,11 @@ public class ConfigHelper
         while (queue.Any())
         {
             var arg = queue.Dequeue();
-            if (arg.StartsWith("-") && arg.Equals("-c", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(arg))
+            {
+                continue;
+            }
+            if (arg.Equals("-c", StringComparison.OrdinalIgnoreCase) || arg.Equals("--config", StringComparison.OrdinalIgnoreCase))
             {
                 while (true)
                 {
@@ -91,5 +125,10 @@ public class ConfigHelper
             return files.ToArray();
         }
         return files.ToArray();
+    }
+
+    public static string GetFolder(string[] args)
+    {
+        throw new NotImplementedException();
     }
 }
