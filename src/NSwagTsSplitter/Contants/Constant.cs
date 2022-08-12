@@ -16,7 +16,8 @@ namespace NSwagTsSplitter.Contants
             "FileParameter",
             "FileResponse",
             "SwaggerException",
-            "ServiceBase"
+            "ServiceBase",
+            "blobToText"
         };
 
         public static List<string> TsBaseType = new List<string>()

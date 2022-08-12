@@ -18,7 +18,7 @@ namespace NSwagTsSplitter.Tests
 {
     public class TypeScriptGenerateTests
     {
-        private readonly SwaggerDocumentHelper _swaggerDocumentHelper;
+        private readonly OpenApiDocumentHelper _swaggerDocumentHelper;
         private readonly ClientsScriptGenerator _selfTypeScriptGenerator;
         private readonly UtilitiesScriptGenerator _utilsScriptGenerator;
         private readonly ModelsScriptGenerator _modelsScriptGenerator;
@@ -28,7 +28,7 @@ namespace NSwagTsSplitter.Tests
         public TypeScriptGenerateTests(ITestOutputHelper outputHelper)
         {
             _outputHelper = outputHelper;
-            _swaggerDocumentHelper = new SwaggerDocumentHelper();
+            _swaggerDocumentHelper = new OpenApiDocumentHelper();
             var nSwagDocument = LoadSettings().Result;
             _openApiDocument = LoadOpenApi().Result;
             var settings = nSwagDocument.CodeGenerators
@@ -41,7 +41,7 @@ namespace NSwagTsSplitter.Tests
         protected async Task<NSwagDocument> LoadSettings()
         {
             var configFilePath = Path.Combine(AppContext.BaseDirectory, "./Config/nswag.nswag");
-            var nSwagDocument = await NSWagDocumentHelper.LoadDocumentFromFileAsync(configFilePath);
+            var nSwagDocument = await NsWagDocumentHelper.LoadDocumentFromFileAsync(configFilePath);
 
             nSwagDocument.ShouldNotBeNull();
             nSwagDocument.CodeGenerators.ShouldNotBeNull();
@@ -68,57 +68,11 @@ namespace NSwagTsSplitter.Tests
             classCode.ShouldContain("IAccountServiceProxy");
             _outputHelper.WriteLine(classCode);
         }
-
-        [Fact]
-        public void GenerateClientClassWithOperationModels_Test()
-        {
-            var operationModels = _openApiDocument.Operations.Take(10)
-                .Select(c => _selfTypeScriptGenerator.GetOperationModelByApiOperation(c));
-            var classCode =
-                _selfTypeScriptGenerator.GenerateClientClassWithOperationModels("Demo", operationModels);
-            classCode.ShouldNotBeNullOrWhiteSpace();
-            classCode.ShouldContain("IDemoServiceProxy");
-            _outputHelper.WriteLine(classCode);
-        }
-
         [Fact]
         public void GenerateClientClasses_Test()
         {
-            var outputDirectory = Path.Combine(AppContext.BaseDirectory, "client");
             var clientClasses = _selfTypeScriptGenerator.GenerateClientClasses();
             clientClasses.ToList().Count.ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void GenerateClientClassWithApiOperations_Test()
-        {
-            var options = _openApiDocument.Operations.Take(10);
-            var classCode = _selfTypeScriptGenerator.GenerateClientClassWithApiOperations("Demo", options);
-            classCode.ShouldNotBeNullOrWhiteSpace();
-            classCode.ShouldContain("IDemoServiceProxy");
-            _outputHelper.WriteLine(classCode);
-        }
-
-        [Fact]
-        public void GenerateClientClassWithNameAndOperations_Test()
-        {
-            var options = _openApiDocument.Operations.Take(10)
-                .Select(c => _selfTypeScriptGenerator.GetOperationModelByApiOperation(c));
-            var classCode =
-                _selfTypeScriptGenerator.GenerateClientClassWithNameAndOperations("Demo", "AbcServiceProxy", options);
-            classCode.ShouldNotBeNullOrWhiteSpace();
-            classCode.ShouldContain("IAbcServiceProxy");
-            _outputHelper.WriteLine(classCode);
-        }
-
-        [Fact]
-        public void GetClientClassHeaderForImport_Test()
-        {
-            var operationModels = _openApiDocument.Operations.Take(1)
-                .Select(c => _selfTypeScriptGenerator.GetOperationModelByApiOperation(c));
-            var headerCode = _selfTypeScriptGenerator.GetClientClassHeaderForImport(operationModels);
-            headerCode.ShouldNotBeNullOrWhiteSpace();
-            _outputHelper.WriteLine(headerCode);
         }
 
         #endregion
@@ -169,7 +123,6 @@ namespace NSwagTsSplitter.Tests
         [Fact]
         public void GenerateDtoClass_Test()
         {
-            var index = new Random().Next(_openApiDocument.Definitions.Count);
             var schema = _openApiDocument.Definitions["ActivityDto"];
             var code = _modelsScriptGenerator.GenerateDtoClass(schema, "ActivityDto", out _);
             _outputHelper.WriteLine(code);

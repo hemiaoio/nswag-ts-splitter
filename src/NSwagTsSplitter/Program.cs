@@ -36,7 +36,7 @@ namespace NSwagTsSplitter
             var configFile = configFiles.First();
             var configFilePath = Path.GetFullPath(configFile);
             Log.Information("Use config file:[{0}]", configFilePath);
-            var nSwagDocument = await NSWagDocumentHelper.LoadDocumentFromString(configFilePath);
+            var nSwagDocument = await NsWagDocumentHelper.LoadDocumentFromFileAsync(configFilePath);
             stopwatch.Stop();
             Log.Information("NSwag config file loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
             var outputDirectory = IoHelper.ReadOutputPath(nSwagDocument, configFilePath);
@@ -44,7 +44,7 @@ namespace NSwagTsSplitter
             stopwatch.Restart();
             // fetch swagger
             var swaggerDocument =
-                await SwaggerDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
+                await OpenApiDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
             stopwatch.Stop();
             Log.Information("Swagger content loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
             stopwatch.Restart();
