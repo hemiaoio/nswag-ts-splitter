@@ -57,7 +57,7 @@ public class UtilitiesScriptGenerator
             CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Utility,
             $@"export class {_clientGeneratorSettings.ClientBaseClass} {{
                     public getBaseUrl(defaultUrl: string, fetchBaseUrl?:string) {{
-                        return '{_openApiDocument.Servers?.FirstOrDefault()?.Url}' || defaultUrl || fetchBaseUrl;
+                        return '{_openApiDocument.Servers?.FirstOrDefault()?.Url}' || defaultUrl || fetchBaseUrl || '';
                     }}
                 }}"));
         var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), _openApiDocument,

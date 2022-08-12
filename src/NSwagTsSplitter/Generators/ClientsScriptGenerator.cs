@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NSwagTsSplitter.Contants;
 using NJsonSchema.CodeGeneration;
+using NSwag.CodeGeneration.OperationNameGenerators;
 using NSwagTsSplitter.Extensions;
 
 namespace NSwagTsSplitter.Generators
@@ -235,13 +236,15 @@ namespace NSwagTsSplitter.Generators
             // type in Query will be thrown away, so directly take the source code to re-process the
             // type inside _resolver
             _openApiDocument.GenerateOperationIds();
+
+            var operationNameGenerator = _settings.OperationNameGenerator;
             return _openApiDocument.Paths
                 .SelectMany(pair => pair.Value.Select(p => new
                 { Path = pair.Key.TrimStart('/'), HttpMethod = p.Key, Operation = p.Value }))
                 .Select(tuple =>
                 {
                     var operationName =
-                        _settings.OperationNameGenerator.GetOperationName(_openApiDocument, tuple.Path,
+                        operationNameGenerator.GetOperationName(_openApiDocument, tuple.Path,
                             tuple.HttpMethod, tuple.Operation);
                     if (operationName.EndsWith("Async"))
                     {
@@ -253,15 +256,21 @@ namespace NSwagTsSplitter.Generators
                         _resolver); // CreateOperationModel(tuple.Operation, _clientGeneratorSettings);
                     operationModel.ControllerName = tuple.Operation.Tags.Any()
                         ? tuple.Operation.Tags.First()
-                        : _settings.OperationNameGenerator.GetClientName(_openApiDocument, tuple.Path,
+                        : operationNameGenerator.GetClientName(_openApiDocument, tuple.Path,
                             tuple.HttpMethod, tuple.Operation);
                     operationModel.Path = tuple.Path;
                     operationModel.HttpMethod = tuple.HttpMethod;
+                    if (operationNameGenerator is MultipleClientsFromPathSegmentsOperationNameGenerator)
+                    {
+                        if (operationName.Equals(operationModel.ControllerName + tuple.HttpMethod, StringComparison.OrdinalIgnoreCase))
+                        {
+                            operationName = tuple.HttpMethod;
+                        }
+                    }
                     if (operationModel.PathParameters.Any())
                     {
                         operationName += "ByPath";
                     }
-
                     operationModel.OperationName = operationName;
                     return operationModel;
                 });
