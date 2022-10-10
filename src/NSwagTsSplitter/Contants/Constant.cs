@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿
+using System.Collections.Generic;
 
-namespace NSwagTsSplitter
+namespace NSwagTsSplitter.Contants
 {
     public static class Constant
     {
@@ -15,7 +16,8 @@ namespace NSwagTsSplitter
             "FileParameter",
             "FileResponse",
             "SwaggerException",
-            "ServiceBase"
+            "ServiceBase",
+            "blobToText"
         };
 
         public static List<string> TsBaseType = new List<string>()

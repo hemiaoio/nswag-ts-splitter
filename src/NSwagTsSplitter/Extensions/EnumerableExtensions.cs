@@ -1,7 +1,8 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 
-namespace NSwagTsSplitter
+namespace NSwagTsSplitter.Extensions
 {
     public static class EnumerableExtensions
     {
