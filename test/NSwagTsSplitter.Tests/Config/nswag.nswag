@@ -47,7 +47,7 @@
       "generateDefaultValues": true,
       "excludedTypeNames": [],
       "excludedParameterNames": [],
-      "handleReferences": false,
+      "handleReferences": true,
       "generateConstructorInterface": true,
       "convertConstructorInterfaceData": false,
       "templateDirectory": "./Templates",

@@ -73,6 +73,9 @@ public class CommonCodeGenerator
 
         Log.Information("Remove index from [{0}]:", outputDirectory);
         var builder = new StringBuilder();
+        builder.AppendLine("/* eslint-disable */");
+        builder.AppendLine("/* tslint:disable */");
+
         var dirs = Directory.GetDirectories(outputDirectory);
         foreach (var dir in dirs)
         {

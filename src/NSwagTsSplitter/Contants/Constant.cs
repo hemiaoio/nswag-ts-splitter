@@ -17,7 +17,10 @@ namespace NSwagTsSplitter.Contants
             "FileResponse",
             "SwaggerException",
             "ServiceBase",
-            "blobToText"
+            "blobToText",
+            "jsonParse",
+            "createInstance",
+            "parseDateOnly"
         };
 
         public static List<string> TsBaseType = new List<string>()

@@ -3,6 +3,7 @@ using System;
 using System.IO;
 
 using NSwag.Commands;
+using Serilog;
 
 namespace NSwagTsSplitter.Helpers
 {

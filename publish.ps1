@@ -6,8 +6,8 @@ Remove-Item ./example/* -Include *.exe -Recurse -Force
 # dotnet publish -c Release -r win-x64 -o ./example /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true ./src/NSwagTsSplitter/NSwagTsSplitter.csproj
 
 
-dotnet publish -c Release -r win-x64 --self-contained -o ./example/win-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj  /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true
+dotnet publish -c Release -r win-x64 --self-contained -o ./example/win-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj  /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishSingleFile=true 
 
-dotnet publish -c Release -r linux-x64 --self-contained -o ./example/linux-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true
+dotnet publish -c Release -r linux-x64 --self-contained -o ./example/linux-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishSingleFile=true 
 
-dotnet publish -c Release -r osx-x64 --self-contained -o ./example/osx-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true
+dotnet publish -c Release -r osx-x64 --self-contained -o ./example/osx-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishSingleFile=true 

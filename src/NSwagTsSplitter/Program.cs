@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
-
 using NSwagTsSplitter.Contants;
 using NSwagTsSplitter.Generators;
 using NSwagTsSplitter.Helpers;
@@ -34,6 +32,7 @@ namespace NSwagTsSplitter
             Stopwatch stopwatch = Stopwatch.StartNew();
             var configFilePath = Path.GetFullPath(config.ConfigPath);
             Log.Information("Use config file:[{0}]", configFilePath);
+            //Log.Information($"{await File.ReadAllTextAsync(configFilePath)}");
             var nSwagDocument = await NsWagDocumentHelper.LoadDocumentFromFileAsync(configFilePath);
             stopwatch.Stop();
             Log.Information("NSwag config file loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);

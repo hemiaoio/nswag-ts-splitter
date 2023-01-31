@@ -165,6 +165,12 @@ public class ModelsScriptGenerator
                 {
                     nswagTypes.Add(propertyArrayItemType);
                 }
+
+                if (_resolver.Settings.HandleReferences)
+                {
+                    nswagTypes.Add("createInstance");
+                    nswagTypes.Add("jsonParse");
+                }
             }
 
             typeNames.Where(c => !nswagTypes.Contains(c.Key)).Where(c => c.Key != typeName).ToList()

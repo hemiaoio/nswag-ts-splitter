@@ -7,6 +7,7 @@ using NSwagTsSplitter.Helpers;
 using System.IO;
 using System.Linq;
 using System.Text;
+using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NSwag.CodeGeneration.TypeScript.Models;
 
@@ -16,6 +17,7 @@ public class UtilitiesScriptGenerator
 {
     private string _utilitiesModuleName = "Utilities";
     private readonly TypeScriptClientGeneratorSettings _clientGeneratorSettings;
+    private readonly TypeScriptGenerator _typeScriptGenerator;
     private readonly TypeScriptTypeResolver _resolver;
     private readonly TypeScriptExtensionCode _extensionCode;
     private readonly OpenApiDocument _openApiDocument;
@@ -35,6 +37,8 @@ public class UtilitiesScriptGenerator
                 clientGeneratorSettings.ConfigurationClass,
                 clientGeneratorSettings.ClientBaseClass
             });
+        _typeScriptGenerator =
+            new TypeScriptGenerator(null, _clientGeneratorSettings.TypeScriptGeneratorSettings, _resolver);
         _openApiDocument = openApiDocument;
     }
 
@@ -66,6 +70,16 @@ public class UtilitiesScriptGenerator
             _clientGeneratorSettings.CodeGeneratorSettings.TemplateFactory.CreateTemplate("TypeScript", "File",
                 model);
         var utilitiesCode = template.Render();
+
+        var dtoGlobal = _typeScriptGenerator.GenerateFile(new JsonSchema(), "Util").Split('\n');
+        for (int i = 0; i < dtoGlobal.Length; i++)
+        {
+            if (i < 13)
+            {
+                continue;
+            }
+            utilitiesCode += "\n" + dtoGlobal[i];
+        }
         utilitiesCode = utilitiesCode.Replace("function ", "export function ")
             .Replace("Placeholder Code For SwaggerException!", "");
         utilitiesCode = utilitiesCode.Replace("\n\n", "\n").Replace("\n\n", "\n").Replace("\n\n", "\n");
