@@ -235,7 +235,7 @@ namespace NSwagTsSplitter.Generators
             // The intention here is to use the GetOperations of instance, but found that the Emun
             // type in Query will be thrown away, so directly take the source code to re-process the
             // type inside _resolver
-            _openApiDocument.GenerateOperationIds();
+            _openApiDocument.GenerateOperationIds(true);
 
             var operationNameGenerator = _settings.OperationNameGenerator;
             return _openApiDocument.Paths
@@ -267,10 +267,10 @@ namespace NSwagTsSplitter.Generators
                             operationName = tuple.HttpMethod;
                         }
                     }
-                    if (operationModel.PathParameters.Any())
-                    {
-                        operationName += "ByPath";
-                    }
+                    //if (operationModel.PathParameters.Any())
+                    //{
+                    //    operationName += "ByPath";
+                    //}
                     operationModel.OperationName = operationName;
                     return operationModel;
                 });

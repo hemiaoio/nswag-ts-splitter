@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,15 +20,14 @@ namespace NSwagTsSplitter.Generators;
 
 public class ModelsScriptGenerator
 {
-    private readonly TypeScriptTypeResolver _resolver;
+    private readonly CustomTypeScriptTypeResolver _resolver;
     private readonly OpenApiDocument _openApiDocument;
     private string _dtoDirName = "";
 
     public ModelsScriptGenerator(TypeScriptClientGeneratorSettings settings, OpenApiDocument openApiDocument)
     {
-
         _openApiDocument = openApiDocument;
-        _resolver = new TypeScriptTypeResolver(settings.TypeScriptGeneratorSettings);
+        _resolver = new CustomTypeScriptTypeResolver(settings.TypeScriptGeneratorSettings);
         _resolver.RegisterSchemaDefinitions(_openApiDocument.Definitions);
     }
 
@@ -59,8 +57,6 @@ public class ModelsScriptGenerator
             IoHelper.Delete(indexFile);
             await File.AppendAllLinesAsync(indexFile, fileNames.Select(c => $"export * from './{c}';"), Encoding.UTF8);
         }
-
-
     }
 
     public IEnumerable<KeyValuePair<string, string>> GenerateDtoClasses()
@@ -84,7 +80,6 @@ public class ModelsScriptGenerator
     {
         string appendCode = string.Empty;
         var typeName = _resolver.GetOrGenerateTypeName(schema, typeNameHint);
-
         if (schema.IsEnumeration)
         {
             var model = new EnumTemplateModel(string.IsNullOrWhiteSpace(typeName) ? typeNameHint : typeName, schema,
@@ -97,75 +92,17 @@ public class ModelsScriptGenerator
         }
         else
         {
-            var model = new ClassTemplateModel(typeName, typeNameHint, _resolver.Settings, _resolver, schema,
+            var model = new CustomClassTemplateModel(typeName, typeNameHint, _resolver.Settings, _resolver, schema,
                 schema);
-            Dictionary<string, List<string>> typeNames = new Dictionary<string, List<string>>();
-            List<string> enumNames = new List<string>();
-            List<string> nswagTypes = new List<string>();
+            List<string> nswagTypes;
             StringBuilder builder = new StringBuilder();
-            foreach (var parent in schema.AllOf)
-            {
-                var type = _resolver.GetOrGenerateTypeName(parent, string.Empty);
-                var list = new List<string>();
-                if (_resolver.Settings.GenerateConstructorInterface)
-                {
-                    list.Add(_resolver.ResolveConstructorInterfaceName(parent, true, string.Empty));
-                }
-                list.Add(type);
-                typeNames.AddIfNot(type, list);
-            }
-
+            var typeNames = GetReferenceTypes(schema, out nswagTypes);
             foreach (var actualProperty in schema.ActualProperties)
             {
                 if (actualProperty.Value.IsEnumeration && actualProperty.Value.Reference == null)
                 {
                     appendCode = GenerateDtoClass(actualProperty.Value, actualProperty.Key, out _);
                 }
-
-                var property = new PropertyModel(model, actualProperty.Value, actualProperty.Key, _resolver,
-                    _resolver.Settings);
-
-                var propertyType = property.Type.IndexOf("[", StringComparison.Ordinal) > 0
-                    ? property.Type.Replace("[]", "")
-                    : property.Type;
-                if (!Constant.TsBaseType.Contains(propertyType) && !property.IsDictionary &&
-                    !actualProperty.Value.IsEnumeration)
-                {
-                    typeNames.AddIfNot(propertyType, new List<string> { propertyType });
-                }
-
-                if (Constant.UtilitiesModules.Contains(propertyType))
-                {
-                    nswagTypes.Add(propertyType);
-                }
-
-                var propertyDictionaryItemType =
-                    property.DictionaryItemType.IndexOf("[", StringComparison.Ordinal) > 0
-                        ? property.DictionaryItemType.Replace("[]", "")
-                        : property.DictionaryItemType;
-                if (!Constant.TsBaseType.Contains(propertyDictionaryItemType))
-                {
-                    typeNames.AddIfNot(propertyDictionaryItemType, new List<string>() { propertyDictionaryItemType });
-                }
-
-                if (Constant.UtilitiesModules.Contains(propertyDictionaryItemType))
-                {
-                    nswagTypes.Add(propertyDictionaryItemType);
-                }
-
-                var propertyArrayItemType = property.ArrayItemType.IndexOf("[", StringComparison.Ordinal) > 0
-                    ? property.ArrayItemType.Replace("[]", "")
-                    : property.ArrayItemType;
-                if (!Constant.TsBaseType.Contains(propertyArrayItemType))
-                {
-                    typeNames.AddIfNot(propertyArrayItemType, new List<string>() { propertyArrayItemType });
-                }
-
-                if (Constant.UtilitiesModules.Contains(propertyArrayItemType))
-                {
-                    nswagTypes.Add(propertyArrayItemType);
-                }
-
                 if (_resolver.Settings.HandleReferences)
                 {
                     nswagTypes.Add("createInstance");
@@ -173,25 +110,157 @@ public class ModelsScriptGenerator
                 }
             }
 
-            typeNames.Where(c => !nswagTypes.Contains(c.Key)).Where(c => c.Key != typeName).ToList()
+            typeNames.Where(c => c.Key != typeName).ToList()
                 .ForEach(c => builder.AppendLine($"import {{ {string.Join(",", c.Value)} }} from './{c.Key}';"));
-            enumNames.Distinct().Where(c => !nswagTypes.Contains(c)).Where(c => c != typeName).ToList()
-                .ForEach(c => builder.AppendLine($"import {{ {c} }} from './{c}';"));
             if (nswagTypes.Any())
             {
                 builder.AppendLine(
                     $"import {{ {string.Join(",", nswagTypes.Distinct())} }} from '{(string.IsNullOrWhiteSpace(_dtoDirName) ? "./" : "../")}Utilities';");
             }
-
             builder.AppendLine();
-
             var template = _resolver.Settings.TemplateFactory.CreateTemplate("TypeScript", "Class", model);
-
             className = model.ClassName;
-
             var code = string.Join("\n", builder.ToString(),
                 template.Render(), appendCode);
             return CommonCodeGenerator.AppendDisabledLint(code);
         }
+    }
+
+
+
+
+    public Dictionary<string, IEnumerable<string>> GetReferenceTypes(JsonSchema schema, out List<string> nswagTypes)
+    {
+        var result = new Dictionary<string, IEnumerable<string>>();
+        nswagTypes = new List<string>();
+        // parent types
+        foreach (var parent in schema.AllOf)
+        {
+            var list = new List<string>();
+            var type = _resolver.GetOrGenerateTypeName(parent, string.Empty);
+            if (Constant.UtilitiesModules.Contains(type))
+            {
+                nswagTypes.Add(type);
+                continue;
+            }
+            list.Add(type);
+            if (_resolver.Settings.GenerateConstructorInterface)
+            {
+                var interfaceName = _resolver.ResolveConstructorInterfaceName(parent, true, string.Empty);
+                list.Insert(0, interfaceName);
+            }
+            result.TryAdd(type, list);
+        }
+
+        // properties
+        foreach (var actualProperty in schema.ActualProperties)
+        {
+            var propertyResult = GetReferenceTypes(actualProperty.Value, out nswagTypes);
+            if (propertyResult != null)
+            {
+                propertyResult.ForEach(keyValue =>
+                {
+                    result.TryAdd(keyValue.Key, keyValue.Value);
+                });
+            }
+        }
+        if (schema.IsDictionary)
+        {
+            var keyType = _resolver.ResolveDictionaryKeyType(schema.AdditionalPropertiesSchema, "string", false);
+            if (keyType != null && !Constant.TsBaseType.Contains(keyType))
+            {
+                if (Constant.UtilitiesModules.Contains(keyType))
+                {
+                    nswagTypes.Add(keyType);
+                }
+                else
+                {
+                    var list = new List<string>();
+                    list.Add(keyType);
+                    if (_resolver.Settings.GenerateConstructorInterface)
+                    {
+                        var interfaceName = _resolver.ResolveConstructorInterfaceName(
+                            schema.AdditionalPropertiesSchema.DictionaryKey, true, string.Empty);
+                        list.Insert(0, interfaceName);
+                    }
+                    result.TryAdd(keyType, list.Distinct());
+                }
+            }
+
+            var valueResult = GetReferenceTypes(schema.AdditionalPropertiesSchema, out nswagTypes);
+            if (valueResult != null)
+            {
+                valueResult.ForEach(keyValue =>
+                {
+                    result.TryAdd(keyValue.Key, keyValue.Value);
+                });
+            }
+
+        }
+        else if (schema.IsArray || schema.IsTuple)
+        {
+            var itemType = _resolver.Resolve(schema.Item, true, "");
+            if (itemType == null || Constant.TsBaseType.Contains(itemType))
+            {
+                return result;
+            }
+
+            if (Constant.UtilitiesModules.Contains(itemType))
+            {
+                nswagTypes.Add(itemType);
+                return result;
+            }
+            var list = new List<string>();
+            list.Add(itemType);
+            if (_resolver.Settings.GenerateConstructorInterface)
+            {
+                var interfaceName = _resolver.ResolveConstructorInterfaceName(
+                    schema.Item, true, string.Empty);
+                list.Insert(0, interfaceName);
+            }
+
+            result.TryAdd(itemType, list.Distinct());
+
+        }
+        else if (schema.IsEnumeration)
+        {
+            var itemType = _resolver.Resolve(schema.Item, true, "");
+            if (itemType == null || Constant.TsBaseType.Contains(itemType))
+            {
+                return result;
+            }
+            if (Constant.UtilitiesModules.Contains(itemType))
+            {
+                nswagTypes.Add(itemType);
+                return result;
+            }
+            var list = new List<string>();
+            list.Add(itemType);
+            result.TryAdd(itemType, list.Distinct());
+        }
+        else
+        {
+            var itemType = _resolver.Resolve(schema, true, "");
+            if (itemType == null || Constant.TsBaseType.Contains(itemType))
+            {
+                return result;
+            }
+            if (Constant.UtilitiesModules.Contains(itemType))
+            {
+                nswagTypes.Add(itemType);
+                return result;
+            }
+            var list = new List<string>();
+            list.Add(itemType);
+            if (_resolver.Settings.GenerateConstructorInterface)
+            {
+                var interfaceName = _resolver.ResolveConstructorInterfaceName(
+                    schema, true, string.Empty);
+                list.Insert(0, interfaceName);
+            }
+
+            result.TryAdd(itemType, list.Distinct());
+        }
+        return result;
     }
 }

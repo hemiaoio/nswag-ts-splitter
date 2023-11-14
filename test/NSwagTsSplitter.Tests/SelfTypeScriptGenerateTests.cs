@@ -123,8 +123,8 @@ namespace NSwagTsSplitter.Tests
         [Fact]
         public void GenerateDtoClass_Test()
         {
-            var schema = _openApiDocument.Definitions["ActivityDto"];
-            var code = _modelsScriptGenerator.GenerateDtoClass(schema, "ActivityDto", out _);
+            var schema = _openApiDocument.Definitions["Volo.Abp.AspNetCore.Mvc.ApplicationConfigurations.ApplicationLocalizationConfigurationDto"];
+            var code = _modelsScriptGenerator.GenerateDtoClass(schema, "Volo.Abp.AspNetCore.Mvc.ApplicationConfigurations.ApplicationLocalizationConfigurationDto", out _);
             _outputHelper.WriteLine(code);
             code.ShouldNotBeNullOrWhiteSpace();
         }

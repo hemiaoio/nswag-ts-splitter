@@ -49,7 +49,7 @@
       "excludedParameterNames": [],
       "handleReferences": true,
       "generateConstructorInterface": true,
-      "convertConstructorInterfaceData": false,
+      "convertConstructorInterfaceData": true,
       "templateDirectory": "./Templates",
       "importRequiredTypes": false,
       "useGetBaseUrlMethod": true,

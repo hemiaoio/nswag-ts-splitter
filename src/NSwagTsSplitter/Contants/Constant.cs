@@ -23,7 +23,7 @@ namespace NSwagTsSplitter.Contants
             "parseDateOnly"
         };
 
-        public static List<string> TsBaseType = new List<string>()
+        public static List<string> TsBaseType = new()
         {
             "string","number","Date","undefined","any","boolean","void","{ [key: string]: any; }","{ [key: string]: string; }"
         };
