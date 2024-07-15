@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+
 using NSwagTsSplitter.Contants;
 using NSwagTsSplitter.Generators;
 using NSwagTsSplitter.Helpers;
@@ -67,8 +68,11 @@ namespace NSwagTsSplitter
             await clientsScriptGenerator.GenerateClientClassFilesAsync(outputDirectory);
             stopwatch.Stop();
             Log.Information("Generate client files over, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
+            var className = nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand.ClassName;
+            var classNamePostfix = className.Replace("{controller}", "");
+            IoHelper.DeleteWithOutClient(outputDirectory, classNamePostfix);
             stopwatch.Restart();
-            await CommonCodeGenerator.GenerateIndexAsync(outputDirectory);
+            await CommonCodeGenerator.GenerateIndexAsync(outputDirectory, false);
             stopwatch.Stop();
             Log.Information("Generate index file over, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
 

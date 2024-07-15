@@ -120,8 +120,14 @@ public class ModelsScriptGenerator
             builder.AppendLine();
             var template = _resolver.Settings.TemplateFactory.CreateTemplate("TypeScript", "Class", model);
             className = model.ClassName;
+            var classBody = template.Render();
+            if (!classBody.TrimStart().StartsWith("export"))
+            {
+                // fix export keyword
+                classBody = $"export {classBody.TrimStart()}";
+            }
             var code = string.Join("\n", builder.ToString(),
-                template.Render(), appendCode);
+                classBody, appendCode);
             return CommonCodeGenerator.AppendDisabledLint(code);
         }
     }

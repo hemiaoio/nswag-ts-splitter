@@ -58,34 +58,98 @@ namespace NSwagTsSplitter.Generators
 
         public async Task GenerateClientClassFilesAsync(string outputDirectory)
         {
-            foreach (var clientClass in GenerateClientClasses())
+            var operations = GetAllOperationModels();
+            foreach (var kv in GetGroupedOperations(operations))
             {
-                string path = Path.Combine(outputDirectory, clientClass.Key + ".ts");
+                var dtoImportCode = await GenerateDtoImportCode(kv.Value, kv.Key, outputDirectory);
+                // generate client class
+                var controllerClassName = _settings.GenerateControllerName(kv.Key);
+                string path = Path.Combine(outputDirectory, controllerClassName + ".ts");
                 IoHelper.Delete(path);
-                var classCode = clientClass.Value;
+
+                var clientCode = GenerateClientClass(kv.Key, kv.Value);
                 var commonImportCode = await CommonCodeGenerator.GetCommonImportFromUtilitiesAsync(outputDirectory, _utilitiesModuleName);
-                classCode = commonImportCode + classCode;// CommonCodeGenerator.AppendImport(classCode, );
-                classCode = CommonCodeGenerator.AppendDisabledLint(classCode);
-                await File.WriteAllTextAsync(path, classCode, Encoding.UTF8);
+                clientCode = CommonCodeGenerator.AppendImport(clientCode, dtoImportCode);
+                clientCode = CommonCodeGenerator.AppendImport(clientCode, commonImportCode);
+                clientCode = CommonCodeGenerator.AppendDisabledLint(clientCode);
+
+                await File.WriteAllTextAsync(path, clientCode, Encoding.UTF8);
             }
         }
 
-        /// <summary>
-        /// Generate all classes
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<KeyValuePair<string, string>> GenerateClientClasses()
+        private async Task<string> GenerateDtoImportCode(TypeScriptOperationModel[] operations, string controllerName, string outputDirectory)
         {
-            var operations = GetAllOperationModels();
+            StringBuilder builder = new StringBuilder();
+
+            var (typeNames, nswagTypes) = GetImportTypeList(operations);
+            var controllerDtoPath = Path.Combine(outputDirectory, controllerName);
+            if (Directory.Exists(controllerDtoPath))
+            {
+                Directory.Delete(controllerDtoPath, true);
+            }
+
+            Directory.CreateDirectory(controllerDtoPath);
+
+            foreach (var typeName in typeNames)
+            {
+                var modelFile = $"./{(string.IsNullOrWhiteSpace(_dtoDirName) ? "" : _dtoDirName + "/")}{typeName}";
+                var modelFileFullPath = Path.Combine(outputDirectory, $"{modelFile}.ts");
+                if (!File.Exists(modelFileFullPath))
+                {
+                    continue;
+                }
+                var typeCode = await File.ReadAllTextAsync(modelFileFullPath, Encoding.UTF8);
+                await MoveModelReferenceToController(typeCode, outputDirectory, controllerDtoPath);
+                var originPath = Path.Combine(outputDirectory, $"{modelFile}.ts");
+                var destinationPath = Path.Combine(controllerDtoPath, $"{modelFile}.ts");
+                File.Copy(originPath, destinationPath, true);
+                builder.AppendLine($"import {{ {typeName} }} from './{controllerName}/{typeName}';");
+            }
+            if (nswagTypes.Any())
+            {
+                var typeFile = $"./{_utilitiesModuleName}";
+                var originPath = Path.Combine(outputDirectory, $"{typeFile}.ts");
+                var destinationPath = Path.Combine(controllerDtoPath, $"{typeFile}.ts");
+                File.Copy(originPath, destinationPath, true);
+                builder.AppendLine($"import {{ {string.Join(", ", nswagTypes.Distinct())} }} from './{controllerName}/{_utilitiesModuleName}';");
+            }
+
+            await CommonCodeGenerator.GenerateIndexAsync(controllerDtoPath, false);
+
+            builder.AppendLine();
+            return builder.ToString();
+        }
+
+        private async Task MoveModelReferenceToController(string typeCode, string outputDirectory, string controllerDtoPath)
+        {
+            var typeCodeLines = typeCode.Split("\n");
+            foreach (var typeCodeLine in typeCodeLines)
+            {
+                if (typeCodeLine.Trim().StartsWith("import"))
+                {
+                    var fromSubstring =
+                        typeCodeLine.Substring(typeCodeLine.IndexOf("from", StringComparison.OrdinalIgnoreCase));
+                    var file = fromSubstring.Replace("from", "").Replace(";", "").Replace("'", "").Replace("\"", "")
+                        .Trim();
+                    var originPath = Path.Combine(outputDirectory, $"{file}.ts");
+                    var fileCode = await File.ReadAllTextAsync(originPath, Encoding.UTF8);
+                    await MoveModelReferenceToController(fileCode, outputDirectory, controllerDtoPath);
+                    var destinationPath = Path.Combine(controllerDtoPath, $"{file}.ts");
+                    File.Copy(originPath, destinationPath, true);
+                }
+            }
+        }
+
+        public IEnumerable<KeyValuePair<string, TypeScriptOperationModel[]>> GetGroupedOperations(
+            IEnumerable<TypeScriptOperationModel> operations)
+        {
             var controllerOperationGroups = operations.GroupBy(o => o.ControllerName);
             foreach (var controllerOperations in controllerOperationGroups)
             {
-                var controllerClassName = _settings.GenerateControllerName(controllerOperations.Key);
-                var clientCode = GenerateClientClass(controllerOperations.Key, controllerOperations.ToArray());
-                yield return new KeyValuePair<string, string>(controllerClassName, clientCode);
+                yield return new KeyValuePair<string, TypeScriptOperationModel[]>(controllerOperations.Key,
+                    controllerOperations.ToArray());
             }
         }
-
         /// <summary>
         /// generate one service class
         /// </summary>
@@ -119,19 +183,15 @@ namespace NSwagTsSplitter.Generators
             var controllerClassName = _settings.GenerateControllerName(controllerName);
             var clientCode =
                 GenerateClientClassWithNameAndOperations(controllerName, controllerClassName, operations.ToList());
-            return CommonCodeGenerator.AppendImport(clientCode, GetClientClassHeaderForImport(operations));
+            return clientCode;
         }
-        /// <summary>
-        /// Get should be import dto and Utilities for operations
-        /// </summary>
-        /// <param name="operations"></param>
-        /// <returns></returns>
-        public string GetClientClassHeaderForImport(IEnumerable<TypeScriptOperationModel> operations)
+
+
+        public (List<string> typeNames, List<string> nswagTypeNames) GetImportTypeList(
+            IEnumerable<TypeScriptOperationModel> operations)
         {
             List<string> typeNames = new List<string>();
             List<string> nswagTypes = new List<string>();
-            StringBuilder builder = new StringBuilder();
-
             foreach (var operation in operations)
             {
                 foreach (var parameter in operation.Parameters)
@@ -177,21 +237,22 @@ namespace NSwagTsSplitter.Generators
                 }
             }
 
-            typeNames.Where(c => !c.StartsWith("{ [key: "))
+            typeNames = typeNames.Where(c => !c.StartsWith("{ [key: "))
                 .Distinct()
-                .Where(c => !nswagTypes.Contains(c))
-                .ForEach(c =>
-                    builder.AppendLine(
-                        $"import {{ {c} }} from './{(string.IsNullOrWhiteSpace(_dtoDirName) ? "" : _dtoDirName + "/")}{c}';"));
+                .Where(c => !nswagTypes.Contains(c)).ToList();
+
+
 
             if (!string.IsNullOrWhiteSpace(_settings.ClientBaseClass))
             {
                 nswagTypes.Add(_settings.ClientBaseClass);
             }
+
             if (_typeScriptClientGenerator.Settings.Template == TypeScriptTemplate.Axios)
             {
                 nswagTypes.Add("isAxiosError");
             }
+
             if (_typeScriptClientGenerator.Settings.Template == TypeScriptTemplate.Angular)
             {
                 nswagTypes.Add("blobToText");
@@ -200,17 +261,12 @@ namespace NSwagTsSplitter.Generators
                     nswagTypes.Add("API_BASE_URL");
                 }
             }
+
             nswagTypes.Add("throwException");
-            if (nswagTypes.Any())
-            {
-                builder.AppendLine(
-                    $"import {{ {string.Join(", ", nswagTypes.Distinct())} }} from './{_utilitiesModuleName}';");
-            }
 
-            builder.AppendLine();
-
-            return builder.ToString();
+            return (typeNames, nswagTypes);
         }
+
         /// <summary>
         /// with custom class name for target controller name
         /// </summary>

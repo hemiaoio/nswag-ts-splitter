@@ -68,13 +68,6 @@ namespace NSwagTsSplitter.Tests
             classCode.ShouldContain("IAccountServiceProxy");
             _outputHelper.WriteLine(classCode);
         }
-        [Fact]
-        public void GenerateClientClasses_Test()
-        {
-            var clientClasses = _selfTypeScriptGenerator.GenerateClientClasses();
-            clientClasses.ToList().Count.ShouldBeGreaterThan(0);
-        }
-
         #endregion
 
         #region UtilitiesModule

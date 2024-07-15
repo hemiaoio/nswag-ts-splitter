@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+
 using Serilog;
 
 namespace NSwagTsSplitter.Generators;
@@ -21,24 +22,25 @@ public class CommonCodeGenerator
     {
         var sourceCodeLines = sourceCode.Split("\n");
         var stringBuilder = new StringBuilder();
-        bool flag = false;
+        bool isImportRow = false;
         var hasImport = false;
         foreach (string str in sourceCodeLines)
         {
             if (str.StartsWith("import"))
             {
                 hasImport = true;
-                flag = true;
+                isImportRow = true;
             }
             else
             {
-                if (flag)
+                if (isImportRow)
                 {
                     stringBuilder.Append(importCode);
-                    flag = false;
+                    isImportRow = false;
                 }
             }
-            stringBuilder.AppendLine(str);
+
+            stringBuilder.AppendLine(str.Replace("\r", ""));
         }
 
         if (!hasImport)
@@ -63,7 +65,7 @@ public class CommonCodeGenerator
         return builder.ToString();
     }
 
-    public static async Task GenerateIndexAsync(string outputDirectory)
+    public static async Task GenerateIndexAsync(string outputDirectory, bool includeDirectory)
     {
         var indexFilePath = Path.Combine(outputDirectory, "index.ts");
         if (File.Exists(indexFilePath))
@@ -76,12 +78,15 @@ public class CommonCodeGenerator
         builder.AppendLine("/* eslint-disable */");
         builder.AppendLine("/* tslint:disable */");
 
-        var dirs = Directory.GetDirectories(outputDirectory);
-        foreach (var dir in dirs)
+        if (includeDirectory)
         {
-            if (File.Exists(Path.Combine(dir, "index.ts")))
+            var dirs = Directory.GetDirectories(outputDirectory);
+            foreach (var dir in dirs)
             {
-                builder.AppendLine($"export * from './{Path.GetFileNameWithoutExtension(dir)}'");
+                if (File.Exists(Path.Combine(dir, "index.ts")))
+                {
+                    builder.AppendLine($"export * from './{Path.GetFileNameWithoutExtension(dir)}'");
+                }
             }
         }
 

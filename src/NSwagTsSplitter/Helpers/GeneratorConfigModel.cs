@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+
 using NJsonSchema.Infrastructure;
+
 using Serilog;
 
 namespace NSwagTsSplitter.Helpers;
@@ -49,7 +51,7 @@ public class GeneratorConfigModel
         var files = new List<string>();
         if (string.IsNullOrWhiteSpace(_configPath))
         {
-            files = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag").ToList();
+            files = Directory.GetFiles(currentDirectory, "*.nswag").ToList();
             if (files.Any())
             {
                 _configPath = files[0];
@@ -61,7 +63,7 @@ public class GeneratorConfigModel
         {
             currentDirectory = AppContext.BaseDirectory;
             Log.Information("CurrentDirectory By [AppContext.BaseDirectory]:{0}", currentDirectory);
-            files = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag").ToList();
+            files = Directory.GetFiles(currentDirectory, "*.nswag").ToList();
             if (files.Any())
             {
                 _configPath = files[0];
@@ -70,11 +72,11 @@ public class GeneratorConfigModel
 
         if (string.IsNullOrWhiteSpace(_configPath))
         {
-            currentDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+            currentDirectory = Path.GetDirectoryName(Environment.ProcessPath);
             Log.Information(
-                "CurrentDirectory By [Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName)]:{0}",
+                "CurrentDirectory By [Path.GetDirectoryName(Environment.ProcessPath)]:{0}",
                 currentDirectory);
-            files = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag").ToList();
+            files = Directory.GetFiles(currentDirectory, "*.nswag").ToList();
             if (files.Any())
             {
                 _configPath = files[0];
@@ -85,7 +87,7 @@ public class GeneratorConfigModel
         {
             currentDirectory = Directory.GetCurrentDirectory();
             Log.Information("CurrentDirectory By [Directory.GetCurrentDirectory()]:{0}", currentDirectory);
-            files = DynamicApis.DirectoryGetFiles(currentDirectory, "*.nswag").ToList();
+            files = Directory.GetFiles(currentDirectory, "*.nswag").ToList();
             if (files.Any())
             {
                 _configPath = files[0];

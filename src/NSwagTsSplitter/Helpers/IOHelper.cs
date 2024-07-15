@@ -3,7 +3,6 @@ using System;
 using System.IO;
 
 using NSwag.Commands;
-using Serilog;
 
 namespace NSwagTsSplitter.Helpers
 {
@@ -64,10 +63,32 @@ namespace NSwagTsSplitter.Helpers
             }
         }
 
+        public static void Delete(string path, string searchPattern)
+        {
+            var files = Directory.GetFiles(path, searchPattern);
+            foreach (var file in files)
+            {
+                File.Delete(file);
+            }
+        }
+
         public static string ReadOutputPath(NSwagDocument nSwagDocument, string configFilePath)
         {
             return CreateOrUpdatePath(configFilePath, nSwagDocument.CodeGenerators
                 .OpenApiToTypeScriptClientCommand.OutputFilePath);
+        }
+
+        public static void DeleteWithOutClient(string outputDirectory, string clientPostfix)
+        {
+            var files = Directory.GetFiles(outputDirectory, "*.ts");
+            foreach (var file in files)
+            {
+                if (file.EndsWith($"{clientPostfix}.ts"))
+                {
+                    continue;
+                }
+                File.Delete(file);
+            }
         }
     }
 }

@@ -6,9 +6,13 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using NJsonSchema.CodeGeneration.Models;
+using Serilog;
 
 // ReSharper disable once CheckNamespace
 namespace NJsonSchema.CodeGeneration.TypeScript.Models
@@ -37,7 +41,6 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
             _schema = schema;
             _resolver = resolver;
             _discriminatorName = discriminatorName;
-
             ClassName = typeName;
             Properties = _schema.ActualProperties.Values
                 .Where(v => settings.TypeStyle == TypeScriptTypeStyle.Interface ||
