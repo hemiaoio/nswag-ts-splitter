@@ -27,6 +27,7 @@ public class OpenApiDocumentHelper
         {
             return openApiDocument;
         }
+
         if (openApiDocument.BaseUrl.StartsWith("http"))
             return openApiDocument;
         string str = openApiDocument.BaseUrl;
@@ -44,5 +45,10 @@ public class OpenApiDocumentHelper
     public async Task<OpenApiDocument> FromPathAsync(string swaggerFilePath)
     {
         return await OpenApiDocument.FromFileAsync(swaggerFilePath);
+    }
+
+    public static async Task<OpenApiDocument> FromJsonAsync(string json)
+    {
+        return await OpenApiDocument.FromJsonAsync(json);
     }
 }

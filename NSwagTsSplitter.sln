@@ -14,6 +14,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example", "example", "{1C023C28-6C43-4E7E-8F0A-F0D3DEED2489}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nswag", "nswag", "{242601B5-95F2-4B97-9E76-C0A1D2BC6F2E}"
+	ProjectSection(SolutionItems) = preProject
+		example\nswag\service.config.nswag = example\nswag\service.config.nswag
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +38,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{242601B5-95F2-4B97-9E76-C0A1D2BC6F2E} = {1C023C28-6C43-4E7E-8F0A-F0D3DEED2489}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {42654620-6295-4A6F-8DEA-CD099B012A8C}

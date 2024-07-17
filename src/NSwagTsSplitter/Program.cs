@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
+using NSwag;
+
 using NSwagTsSplitter.Contants;
 using NSwagTsSplitter.Generators;
 using NSwagTsSplitter.Helpers;
@@ -40,11 +42,22 @@ namespace NSwagTsSplitter
             var outputDirectory = IoHelper.ReadOutputPath(nSwagDocument, configFilePath);
             Log.Information("Output directory is :[{0}]", outputDirectory);
             stopwatch.Restart();
-            // fetch swagger
-            var swaggerDocument = await OpenApiDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
-            stopwatch.Stop();
-            Log.Information("Swagger content loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
-            stopwatch.Restart();
+            OpenApiDocument swaggerDocument;
+            if (string.IsNullOrEmpty(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Json))
+            {
+                // fetch swagger
+                swaggerDocument = await OpenApiDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
+                stopwatch.Stop();
+                Log.Information("Swagger content loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
+                stopwatch.Restart();
+            }
+            else
+            {
+                swaggerDocument = await OpenApiDocumentHelper.FromJsonAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Json);
+                stopwatch.Stop();
+                Log.Information("Swagger content loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
+                stopwatch.Restart();
+            }
             var settings = nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand.Settings;
             settings.ExcludedParameterNames ??= Array.Empty<string>();
             Constant.TsBaseType.AddRange(settings.ExcludedParameterNames);

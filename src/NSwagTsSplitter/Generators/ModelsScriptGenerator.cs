@@ -121,11 +121,6 @@ public class ModelsScriptGenerator
             var template = _resolver.Settings.TemplateFactory.CreateTemplate("TypeScript", "Class", model);
             className = model.ClassName;
             var classBody = template.Render();
-            if (!classBody.TrimStart().StartsWith("export"))
-            {
-                // fix export keyword
-                classBody = $"export {classBody.TrimStart()}";
-            }
             var code = string.Join("\n", builder.ToString(),
                 classBody, appendCode);
             return CommonCodeGenerator.AppendDisabledLint(code);
@@ -144,6 +139,10 @@ public class ModelsScriptGenerator
         {
             var list = new List<string>();
             var type = _resolver.GetOrGenerateTypeName(parent, string.Empty);
+            if (type.StartsWith("Anonymous"))
+            {
+                continue;
+            }
             if (Constant.UtilitiesModules.Contains(type))
             {
                 nswagTypes.Add(type);

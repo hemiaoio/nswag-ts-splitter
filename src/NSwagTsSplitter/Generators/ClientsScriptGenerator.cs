@@ -210,19 +210,25 @@ namespace NSwagTsSplitter.Generators
                     }
                 }
 
-                var resultType = operation.ResultType.IndexOf("[", StringComparison.Ordinal) > 0
+                // TODO: Handler generate type.
+                var operationResultType = operation.ResultType.IndexOf("[", StringComparison.Ordinal) > 0
                     ? operation.ResultType.Replace("[]", "")
                     : operation.ResultType;
-                if (!Constant.TsBaseType.Contains(resultType))
+                operationResultType = operationResultType.Trim();
+                var resultTypes = operationResultType.Split("|", StringSplitOptions.RemoveEmptyEntries);
+                foreach (var type in resultTypes)
                 {
-                    typeNames.Add(resultType);
-                }
+                    var resultType = type.Trim();
+                    if (!Constant.TsBaseType.Contains(resultType))
+                    {
+                        typeNames.Add(resultType);
+                    }
 
-                if (Constant.UtilitiesModules.Contains(resultType))
-                {
-                    nswagTypes.Add(resultType);
+                    if (Constant.UtilitiesModules.Contains(resultType))
+                    {
+                        nswagTypes.Add(resultType);
+                    }
                 }
-
                 var exceptionType = operation.ExceptionType.IndexOf("[", StringComparison.Ordinal) > 0
                     ? operation.ExceptionType.Replace("[]", "")
                     : operation.ExceptionType;
@@ -233,7 +239,7 @@ namespace NSwagTsSplitter.Generators
                 typeNames.AddRange(exceptionTypes);
                 if (Constant.UtilitiesModules.Contains(exceptionType))
                 {
-                    nswagTypes.Add(resultType);
+                    nswagTypes.Add(exceptionType);
                 }
             }
 
