@@ -11,11 +11,18 @@ public class CommonCodeGenerator
     public static string AppendDisabledLint(string sourceCode)
     {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine("/* eslint-disable */");
-        stringBuilder.AppendLine("/* tslint:disable */");
         stringBuilder.Append(sourceCode);
         stringBuilder.AppendLine();
+        AppendDisabledLint(stringBuilder);
         return stringBuilder.ToString();
+    }
+
+    private static void AppendDisabledLint(StringBuilder builder)
+    {
+        builder.Insert(0, "/* tslint:disable */\n");
+        builder.Insert(0, "/* eslint-disable */\n");
+        builder.Insert(0, "/* eslint-disable unicorn/no-abusive-eslint-disable */\n");
+        builder.Insert(0, "/* eslint-disable eslint-comments/no-unlimited-disable */\n");
     }
 
     public static string AppendImport(string sourceCode, string importCode)
@@ -75,9 +82,6 @@ public class CommonCodeGenerator
 
         Log.Information("Remove index from [{0}]:", outputDirectory);
         var builder = new StringBuilder();
-        builder.AppendLine("/* eslint-disable */");
-        builder.AppendLine("/* tslint:disable */");
-
         if (includeDirectory)
         {
             var dirs = Directory.GetDirectories(outputDirectory);
@@ -96,6 +100,7 @@ public class CommonCodeGenerator
             builder.AppendLine($"export * from './{Path.GetFileNameWithoutExtension(file)}'");
         }
 
+        AppendDisabledLint(builder);
         await File.WriteAllTextAsync(indexFilePath, builder.ToString(), Encoding.UTF8);
     }
 }

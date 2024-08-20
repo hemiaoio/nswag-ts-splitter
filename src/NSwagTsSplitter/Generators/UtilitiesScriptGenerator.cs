@@ -47,6 +47,7 @@ public class UtilitiesScriptGenerator
         string utilities = GenerateUtilities();
         string path = Path.Combine(outputDirectory, _utilitiesModuleName + ".ts");
         IoHelper.Delete(path);
+
         await File.WriteAllTextAsync(path, utilities, Encoding.UTF8);
     }
 
@@ -83,6 +84,7 @@ public class UtilitiesScriptGenerator
         utilitiesCode = utilitiesCode.Replace("function ", "export function ")
             .Replace("Placeholder Code For SwaggerException!", "");
         utilitiesCode = utilitiesCode.Replace("\n\n", "\n").Replace("\n\n", "\n").Replace("\n\n", "\n");
+        utilitiesCode = CommonCodeGenerator.AppendDisabledLint(utilitiesCode);
         return utilitiesCode;
     }
 }

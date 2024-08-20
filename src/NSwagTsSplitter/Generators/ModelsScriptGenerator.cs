@@ -64,8 +64,10 @@ public class ModelsScriptGenerator
         var defs = _openApiDocument.Definitions;
         foreach (var definition in defs)
         {
-            var code = GenerateDtoClass(definition.Value, definition.Key, out string className);
-            yield return new KeyValuePair<string, string>(className, code);
+            foreach (var keyValuePair in GenerateDtoClass(definition.Value, definition.Key))
+            {
+                yield return keyValuePair;
+            }
         }
     }
 
@@ -74,9 +76,8 @@ public class ModelsScriptGenerator
     /// </summary>
     /// <param name="schema"></param>
     /// <param name="typeNameHint"></param>
-    /// <param name="className"></param>
     /// <returns></returns>
-    public string GenerateDtoClass(JsonSchema schema, string typeNameHint, out string className)
+    public IEnumerable<KeyValuePair<string, string>> GenerateDtoClass(JsonSchema schema, string typeNameHint)
     {
         string appendCode = string.Empty;
         var typeName = _resolver.GetOrGenerateTypeName(schema, typeNameHint);
@@ -87,8 +88,9 @@ public class ModelsScriptGenerator
             var template = _resolver.Settings.TemplateFactory.CreateTemplate("TypeScript", "Enum", model);
             var codeArtifact = new CodeArtifact(string.IsNullOrWhiteSpace(typeName) ? typeNameHint : typeName,
                 CodeArtifactType.Enum, CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Undefined, template);
-            className = codeArtifact.TypeName;
-            return CommonCodeGenerator.AppendDisabledLint(codeArtifact.Code);
+            var className = codeArtifact.TypeName;
+            yield return new KeyValuePair<string, string>(className,
+                CommonCodeGenerator.AppendDisabledLint(codeArtifact.Code));
         }
         else
         {
@@ -101,8 +103,12 @@ public class ModelsScriptGenerator
             {
                 if (actualProperty.Value.IsEnumeration && actualProperty.Value.Reference == null)
                 {
-                    appendCode = GenerateDtoClass(actualProperty.Value, actualProperty.Key, out _);
+                    foreach (var keyValuePair in GenerateDtoClass(actualProperty.Value, actualProperty.Key))
+                    {
+                        yield return keyValuePair;
+                    }
                 }
+
                 if (_resolver.Settings.HandleReferences)
                 {
                     nswagTypes.Add("createInstance");
@@ -117,13 +123,14 @@ public class ModelsScriptGenerator
                 builder.AppendLine(
                     $"import {{ {string.Join(",", nswagTypes.Distinct())} }} from '{(string.IsNullOrWhiteSpace(_dtoDirName) ? "./" : "../")}Utilities';");
             }
+
             builder.AppendLine();
             var template = _resolver.Settings.TemplateFactory.CreateTemplate("TypeScript", "Class", model);
-            className = model.ClassName;
+            var className = model.ClassName;
             var classBody = template.Render();
             var code = string.Join("\n", builder.ToString(),
                 classBody, appendCode);
-            return CommonCodeGenerator.AppendDisabledLint(code);
+            yield return new KeyValuePair<string, string>(className, CommonCodeGenerator.AppendDisabledLint(code));
         }
     }
 
@@ -229,8 +236,16 @@ public class ModelsScriptGenerator
         }
         else if (schema.IsEnumeration)
         {
-            var itemType = _resolver.Resolve(schema.Item, true, "");
-            if (itemType == null || Constant.TsBaseType.Contains(itemType))
+            string itemType;
+            if (schema.Item == null && schema is JsonSchemaProperty schemaProperty)
+            {
+                itemType = _resolver.GetOrGenerateTypeName(schemaProperty, schemaProperty.Name);
+            }
+            else
+            {
+                itemType = _resolver.Resolve(schema.Item, true, "");
+            }
+            if (Constant.TsBaseType.Contains(itemType))
             {
                 return result;
             }
@@ -246,7 +261,7 @@ public class ModelsScriptGenerator
         else
         {
             var itemType = _resolver.Resolve(schema, true, "");
-            if (itemType == null || Constant.TsBaseType.Contains(itemType))
+            if (Constant.TsBaseType.Contains(itemType))
             {
                 return result;
             }

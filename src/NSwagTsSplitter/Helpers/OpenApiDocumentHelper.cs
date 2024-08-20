@@ -11,9 +11,11 @@ public class OpenApiDocumentHelper
 {
     public static async Task<OpenApiDocument> FromUrlAsync(string url)
     {
-        using HttpClient httpClient = new HttpClient();
+        var handler = new HttpClientHandler();
+        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        using HttpClient httpClient = new HttpClient(handler);
         var openApiDocumentContent = await httpClient.GetStringAsync(url);
-        OpenApiDocument openApiDocument = null;
+        OpenApiDocument openApiDocument;
         if (StringHelper.IsJson(openApiDocumentContent))
         {
             openApiDocument = await OpenApiDocument.FromJsonAsync(openApiDocumentContent);
