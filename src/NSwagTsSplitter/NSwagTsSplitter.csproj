@@ -10,5 +10,9 @@
 		<PackageReference Include="NSwag.Commands" Version="14.1.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Models\" />
+	  <Folder Include="NSwag\CodeGeneration\TypeScript\Models\" />
+	</ItemGroup>
 
 </Project>

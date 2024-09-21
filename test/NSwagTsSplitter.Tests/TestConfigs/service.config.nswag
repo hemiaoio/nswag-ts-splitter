@@ -1,24 +1,24 @@
-﻿{
-  "runtime": "Default",
+{
+  "runtime": "Net80",
   "defaultVariables": null,
   "documentGenerator": {
     "fromDocument": {
-      "url": "",
-      "output": null
+      "url": "https://petstore3.swagger.io/api/v3/openapi.json"
     }
   },
-  "codeGenerators": {
+  "CodeGenerators": {
     "openApiToTypeScriptClient": {
-      "className": "{controller}ServiceProxy",
-      "moduleName": "",
+      "className": "{controller}Client",
+      "moduleName": null,
       "namespace": "",
-      "typeScriptVersion": 2.7,
+      "typeScriptVersion": 4.3,
       "template": "Axios",
       "promiseType": "Promise",
       "httpClass": "HttpClient",
-      "useSingletonProvider": true,
-      "injectionTokenType": "InjectionToken",
-      "rxJsVersion": 6.0,
+      "withCredentials": false,
+      "useSingletonProvider": false,
+      "injectionTokenType": "OpaqueToken",
+      "rxJsVersion": 6,
       "dateTimeType": "Date",
       "nullValue": "Undefined",
       "generateClientClasses": true,
@@ -26,8 +26,8 @@
       "generateOptionalParameters": true,
       "exportTypes": true,
       "wrapDtoExceptions": false,
-      "exceptionClass": "SwaggerException",
-      "clientBaseClass": "ServiceProxyBase",
+      "exceptionClass": "ApiException",
+      "clientBaseClass": "ClientBase",
       "wrapResponses": false,
       "wrapResponseMethods": [],
       "generateResponseClasses": true,
@@ -37,32 +37,49 @@
       "useTransformOptionsMethod": false,
       "useTransformResultMethod": false,
       "generateDtoTypes": true,
-      "operationGenerationMode": "MultipleClientsFromPathSegments",
+      "operationGenerationMode": "MultipleClientsFromFirstTagAndOperationId",
       "markOptionalProperties": true,
       "generateCloneMethod": true,
       "typeStyle": "Class",
+      "enumStyle": "Enum",
+      "useLeafType": false,
       "classTypes": [],
       "extendedClasses": [],
-      "extensionCode": "service.extensions.ts",
+      "extensionCode": null,
       "generateDefaultValues": true,
       "excludedTypeNames": [],
       "excludedParameterNames": [],
-      "handleReferences": true,
+      "handleReferences": false,
+      "generateTypeCheckFunctions": false,
       "generateConstructorInterface": true,
       "convertConstructorInterfaceData": true,
-      "templateDirectory": "./Templates",
-      "importRequiredTypes": false,
-      "useGetBaseUrlMethod": true,
+      "importRequiredTypes": true,
+      "useGetBaseUrlMethod": false,
       "baseUrlTokenName": "API_BASE_URL",
       "queryNullValue": "",
+      "useAbortSignal": false,
       "inlineNamedDictionaries": false,
       "inlineNamedAny": false,
+      "includeHttpContext": false,
+      "templateDirectory": null,
       "typeNameGeneratorType": null,
       "propertyNameGeneratorType": null,
       "enumNameGeneratorType": null,
       "serviceHost": null,
       "serviceSchemes": null,
-      "output": "../src/lib/service-proxy"
+      "output": "./api",
+      "newLineBehavior": "LF",
+      "dtoPlain": false,
+      "commonModule": {
+        "RemoteServiceErrorInfo": "./common/RemoteServiceErrorInfo",
+        "RemoteServiceErrorResponse": "./common/RemoteServiceErrorResponse",
+        "RemoteServiceValidationErrorInfo": "./common/RemoteServiceValidationErrorInfo",
+        "ClientBase": "./common/Utilities",
+        "ApiException": "./common/Utilities",
+        "throwException": "./common/Utilities",
+        "isAxiosError": "./common/Utilities",
+        "SwaggerException": "./common/Utilities"
+      }
     }
   }
 }

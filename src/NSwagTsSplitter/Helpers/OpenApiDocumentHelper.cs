@@ -3,7 +3,8 @@
 using System.Net.Http;
 using System;
 using System.Threading.Tasks;
-using NSwagTsSplitter.Utils;
+using NSwag.Commands.Generation;
+using NSwagTsSplitter.Extensions;
 
 namespace NSwagTsSplitter.Helpers;
 
@@ -16,7 +17,7 @@ public class OpenApiDocumentHelper
         using HttpClient httpClient = new HttpClient(handler);
         var openApiDocumentContent = await httpClient.GetStringAsync(url);
         OpenApiDocument openApiDocument;
-        if (StringHelper.IsJson(openApiDocumentContent))
+        if (openApiDocumentContent.IsJson())
         {
             openApiDocument = await OpenApiDocument.FromJsonAsync(openApiDocumentContent);
         }
@@ -52,5 +53,32 @@ public class OpenApiDocumentHelper
     public static async Task<OpenApiDocument> FromJsonAsync(string json)
     {
         return await OpenApiDocument.FromJsonAsync(json);
+    }
+
+    public static async Task<OpenApiDocument> FromDocumentCommandAsync(FromDocumentCommand fromDocumentCommand)
+    {
+        if (string.IsNullOrEmpty(fromDocumentCommand.Json))
+        {
+            // fetch swagger
+            return await FromUrlAsync(fromDocumentCommand.Url);
+        }
+
+        return await FromJsonAsync(fromDocumentCommand.Json);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="fromDocumentCommand"></param>
+    /// <returns></returns>
+    public static OpenApiDocument FromDocumentCommand(FromDocumentCommand fromDocumentCommand)
+    {
+        if (string.IsNullOrEmpty(fromDocumentCommand.Json))
+        {
+            // fetch swagger
+            return FromUrlAsync(fromDocumentCommand.Url).Result;
+        }
+
+        return FromJsonAsync(fromDocumentCommand.Json).Result;
     }
 }

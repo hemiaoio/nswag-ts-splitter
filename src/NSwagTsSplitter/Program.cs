@@ -1,13 +1,15 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
-using NSwag;
+using NJsonSchema.CodeGeneration.TypeScript;
 
-using NSwagTsSplitter.Contants;
+using NSwag;
+using NSwag.CodeGeneration.TypeScript;
+
 using NSwagTsSplitter.Generators;
 using NSwagTsSplitter.Helpers;
+using NSwagTsSplitter.IO;
 
 using Serilog;
 namespace NSwagTsSplitter
@@ -21,7 +23,6 @@ namespace NSwagTsSplitter
                 .CreateLogger();
 
             // resolve the settings file
-
             var config = ArgumentsHelper.ReadArgs(args);
             if (string.IsNullOrWhiteSpace(config.ConfigPath))
             {
@@ -31,67 +32,57 @@ namespace NSwagTsSplitter
             {
                 throw new FileNotFoundException($"Not found config file from :{config.ConfigPath}");
             }
+
             Log.Information("Read config files:[{0}]", config.ConfigPath);
             Stopwatch stopwatch = Stopwatch.StartNew();
-            var configFilePath = Path.GetFullPath(config.ConfigPath);
-            Log.Information("Use config file:[{0}]", configFilePath);
-            //Log.Information($"{await File.ReadAllTextAsync(configFilePath)}");
-            var nSwagDocument = await NsWagDocumentHelper.LoadDocumentFromFileAsync(configFilePath);
+            var nSwagDocument = await NsWagDocumentHelper.LoadDocumentFromFileAsync(config.ConfigPath);
             stopwatch.Stop();
             Log.Information("NSwag config file loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
-            var outputDirectory = IoHelper.ReadOutputPath(nSwagDocument, configFilePath);
+            var outputDirectory = IoHelper.ReadOutputPath(nSwagDocument, config.ConfigPath);
+            config.OutputBaseDirectory = outputDirectory;
             Log.Information("Output directory is :[{0}]", outputDirectory);
             stopwatch.Restart();
-            OpenApiDocument swaggerDocument;
-            if (string.IsNullOrEmpty(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Json))
-            {
-                // fetch swagger
-                swaggerDocument = await OpenApiDocumentHelper.FromUrlAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Url);
-                stopwatch.Stop();
-                Log.Information("Swagger content loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
-                stopwatch.Restart();
-            }
-            else
-            {
-                swaggerDocument = await OpenApiDocumentHelper.FromJsonAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand.Json);
-                stopwatch.Stop();
-                Log.Information("Swagger content loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
-                stopwatch.Restart();
-            }
-            var settings = nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand.Settings;
-            settings.ExcludedParameterNames ??= Array.Empty<string>();
-            Constant.TsBaseType.AddRange(settings.ExcludedParameterNames);
-            // Utilities
-            var utilitiesScriptGenerator = new UtilitiesScriptGenerator(settings, swaggerDocument);
-            await utilitiesScriptGenerator.GenerateUtilitiesFilesAsync(outputDirectory);
-            stopwatch.Stop();
-            Log.Information("Generate Utilities.ts complate, use time:{0}ms",
-                stopwatch.Elapsed.TotalMilliseconds);
+
+            OpenApiDocument swaggerDocument =
+                await OpenApiDocumentHelper.FromDocumentCommandAsync(nSwagDocument.SwaggerGenerators.FromDocumentCommand);
+            Log.Information("Swagger content loaded, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
             stopwatch.Restart();
+
+            var settings = nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand.Settings;
+            config.AddTsBaseTypes(settings.ExcludedParameterNames);
+
+            var fileWriter = new FileWriter(config);
+            var resolver = new TypeScriptTypeResolver(settings.TypeScriptGeneratorSettings);
+            // Utilities
+            var utilitiesGenerator = new UtilitiesGenerator(settings, swaggerDocument, config, resolver);
+            var utilitiesModules = utilitiesGenerator.Generate();
+            fileWriter.AddModules(utilitiesModules);
+            stopwatch.Stop();
+            Log.Information("Generate Utilities.ts complete, use time:{0}ms",
+                stopwatch.Elapsed.TotalMilliseconds);
+
+
             // DtoClass
-            var modelsScriptGenerator = new ModelsScriptGenerator(settings, swaggerDocument);
-            modelsScriptGenerator.SetDirName(config.DtoPath);
-            await modelsScriptGenerator.GenerateDtoFilesAsync(outputDirectory);
+            stopwatch.Restart();
+            var modelsScriptGenerator = new CustomTypeScriptGenerator(swaggerDocument, settings.TypeScriptGeneratorSettings, resolver, config);
+            var modelModules = modelsScriptGenerator.GenerateFiles();
+            fileWriter.AddModules(modelModules);
             stopwatch.Stop();
             Log.Information("Generate dto files over, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
+
+
             stopwatch.Restart();
-            var clientsScriptGenerator = new ClientsScriptGenerator(settings, swaggerDocument);
-            clientsScriptGenerator.SetDtoPath(modelsScriptGenerator.DirName);
-            clientsScriptGenerator.SetUtilitiesModuleName(utilitiesScriptGenerator.UtilitiesModuleName);
-            await clientsScriptGenerator.GenerateClientClassFilesAsync(outputDirectory);
+            var clientsScriptGenerator = new CustomTypeScriptClientGenerator(swaggerDocument, settings, config, resolver);
+            var clientModules = clientsScriptGenerator.GenerateFiles();
+            fileWriter.AddModules(clientModules);
             stopwatch.Stop();
             Log.Information("Generate client files over, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
-            var className = nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand.ClassName;
-            var classNamePostfix = className.Replace("{controller}", "");
-            IoHelper.DeleteWithOutClient(outputDirectory, classNamePostfix);
+
             stopwatch.Restart();
-            await CommonCodeGenerator.GenerateIndexAsync(outputDirectory, false);
+            await fileWriter.WriteAsync();
             stopwatch.Stop();
             Log.Information("Generate index file over, use time:{0}ms", stopwatch.Elapsed.TotalMilliseconds);
 
         }
-
-
-
     }
 }

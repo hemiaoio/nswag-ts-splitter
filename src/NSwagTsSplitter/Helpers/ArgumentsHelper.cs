@@ -1,13 +1,13 @@
-﻿using NJsonSchema.Infrastructure;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+
+using NSwagTsSplitter.Configuration;
+
 using Serilog;
-using NSwag.Commands;
+
+using static System.String;
 
 namespace NSwagTsSplitter.Helpers;
 
@@ -19,35 +19,58 @@ public class ArgumentsHelper
     /// 
     public static string RootBinaryDirectory { get; set; } = Directory.GetCurrentDirectory();
 
-    public static GeneratorConfigModel ReadArgs(string[] args)
+    public static GeneratorOption ReadArgs(string[] args, GeneratorOption model = null)
     {
-        var model = new GeneratorConfigModel();
+        bool fromArgs = false;
+        if (model == null)
+        {
+            fromArgs = true;
+            model = new GeneratorOption();
+        }
+
         Queue<string> queue = new Queue<string>(args);
         while (queue.Any())
         {
             var arg = queue.Dequeue();
-            if (string.IsNullOrWhiteSpace(arg))
+            if (IsNullOrWhiteSpace(arg))
             {
                 continue;
             }
-            if (arg.Equals("-c", StringComparison.OrdinalIgnoreCase) || arg.Equals("--config", StringComparison.OrdinalIgnoreCase))
+
+            if (arg.Equals("-c", StringComparison.OrdinalIgnoreCase) ||
+                arg.Equals("--config", StringComparison.OrdinalIgnoreCase))
             {
                 model.SetConfigPath(queue.Dequeue(), RootBinaryDirectory);
             }
 
-            if (arg.Equals("-dp", StringComparison.OrdinalIgnoreCase) ||
-                arg.Equals("--dto-path", StringComparison.OrdinalIgnoreCase))
+            if (arg.Equals("-pd", StringComparison.OrdinalIgnoreCase) || arg.Equals("--plain-dto"))
             {
-                model.DtoPath = queue.Dequeue();
+                model.PlainDto = true;
             }
+
+            if (arg.Equals("-df", StringComparison.OrdinalIgnoreCase) ||
+                arg.Equals("--dto-folder", StringComparison.OrdinalIgnoreCase))
+            {
+                model.DtoFolder = queue.Dequeue();
+            }
+
             if (arg.Equals("-sp", StringComparison.OrdinalIgnoreCase) ||
                 arg.Equals("--service-path", StringComparison.OrdinalIgnoreCase))
             {
-                model.ServicePath = queue.Dequeue();
+                model.ServiceFolder = queue.Dequeue();
             }
         }
+
+        if (IsNullOrEmpty(model.ConfigPath) || !fromArgs)
+        {
+            return model;
+        }
+
+        model = GeneratorOption.FromConfigFile(model.ConfigPath);
+        ReadArgs(args, model);
         return model;
     }
+
     public static string[] GetNSwagPath(string[] args)
     {
         var files = new List<string>();
@@ -57,7 +80,7 @@ public class ArgumentsHelper
         while (queue.Any())
         {
             var arg = queue.Dequeue();
-            if (string.IsNullOrWhiteSpace(arg))
+            if (IsNullOrWhiteSpace(arg))
             {
                 continue;
             }
@@ -110,7 +133,7 @@ public class ArgumentsHelper
         }
 
         currentDirectory = Path.GetDirectoryName(Environment.ProcessPath);
-        Log.Information<string>("CurrentDirectory By [Path.GetDirectoryName(Environment.ProcessPath)]:{0}", currentDirectory);
+        Log.Information("CurrentDirectory By [Path.GetDirectoryName(Environment.ProcessPath)]:{0}", currentDirectory);
         files = Directory.GetFiles(currentDirectory, "*.nswag").ToList();
         if (files.Any())
         {
@@ -124,10 +147,5 @@ public class ArgumentsHelper
             return files.ToArray();
         }
         return files.ToArray();
-    }
-
-    public static string GetFolder(string[] args)
-    {
-        throw new NotImplementedException();
     }
 }

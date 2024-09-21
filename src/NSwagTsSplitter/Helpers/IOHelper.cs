@@ -77,18 +77,5 @@ namespace NSwagTsSplitter.Helpers
             return CreateOrUpdatePath(configFilePath, nSwagDocument.CodeGenerators
                 .OpenApiToTypeScriptClientCommand.OutputFilePath);
         }
-
-        public static void DeleteWithOutClient(string outputDirectory, string clientPostfix)
-        {
-            var files = Directory.GetFiles(outputDirectory, "*.ts");
-            foreach (var file in files)
-            {
-                if (file.EndsWith($"{clientPostfix}.ts"))
-                {
-                    continue;
-                }
-                File.Delete(file);
-            }
-        }
     }
 }

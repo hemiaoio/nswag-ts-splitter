@@ -8,7 +8,7 @@ namespace NJsonSchema
     internal static class EnumExtensions
     {
         // for older frameworks
-        private const MethodImplOptions OptionAggressiveInlining = (MethodImplOptions) 256;
+        private const MethodImplOptions OptionAggressiveInlining = (MethodImplOptions)256;
 
         [MethodImpl(OptionAggressiveInlining)]
         public static bool IsNull(this JsonObjectType type) => (type & JsonObjectType.Null) != 0;

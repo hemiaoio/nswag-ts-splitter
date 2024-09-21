@@ -2,55 +2,42 @@
 using NSwag;
 using NJsonSchema.CodeGeneration.TypeScript;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using NSwagTsSplitter.Helpers;
 using System.IO;
-using System.Linq;
-using System.Text;
 using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NSwag.CodeGeneration.TypeScript.Models;
+using NSwagTsSplitter.Configuration;
+using NSwagTsSplitter.Extensions;
+using NSwagTsSplitter.Models;
 
 namespace NSwagTsSplitter.Generators;
 
-public class UtilitiesScriptGenerator
+public class UtilitiesGenerator : IGenerator
 {
-    private string _utilitiesModuleName = "Utilities";
     private readonly TypeScriptClientGeneratorSettings _clientGeneratorSettings;
     private readonly TypeScriptGenerator _typeScriptGenerator;
     private readonly TypeScriptTypeResolver _resolver;
     private readonly TypeScriptExtensionCode _extensionCode;
     private readonly OpenApiDocument _openApiDocument;
+    private readonly GeneratorOption _generatorOption;
 
-    public string UtilitiesModuleName => _utilitiesModuleName;
-
-    public void SetUtilitiesModuleName(string utilitiesModuleName) => _utilitiesModuleName = utilitiesModuleName;
-
-    public UtilitiesScriptGenerator(TypeScriptClientGeneratorSettings clientGeneratorSettings,
-        OpenApiDocument openApiDocument)
+    public UtilitiesGenerator(TypeScriptClientGeneratorSettings clientGeneratorSettings,
+        OpenApiDocument openApiDocument, GeneratorOption generatorOption, TypeScriptTypeResolver resolver)
     {
         _clientGeneratorSettings = clientGeneratorSettings;
-        _resolver = new TypeScriptTypeResolver(clientGeneratorSettings.TypeScriptGeneratorSettings);
+        _resolver = resolver;
         _extensionCode = new TypeScriptExtensionCode(clientGeneratorSettings.TypeScriptGeneratorSettings.ExtensionCode,
-            clientGeneratorSettings.TypeScriptGeneratorSettings.ExtendedClasses ?? new[]
-            {
-                clientGeneratorSettings.ConfigurationClass,
-                clientGeneratorSettings.ClientBaseClass
-            });
+            clientGeneratorSettings.TypeScriptGeneratorSettings.ExtendedClasses);
         _typeScriptGenerator =
             new TypeScriptGenerator(null, _clientGeneratorSettings.TypeScriptGeneratorSettings, _resolver);
         _openApiDocument = openApiDocument;
+        _generatorOption = generatorOption;
     }
 
-    public async Task GenerateUtilitiesFilesAsync(string outputDirectory)
-    {
-        string utilities = GenerateUtilities();
-        string path = Path.Combine(outputDirectory, _utilitiesModuleName + ".ts");
-        IoHelper.Delete(path);
-
-        await File.WriteAllTextAsync(path, utilities, Encoding.UTF8);
-    }
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     public string GenerateUtilities()
     {
         ////var tempClientCode = "Placeholder Code For SwaggerException!";
@@ -61,10 +48,10 @@ public class UtilitiesScriptGenerator
         tempClientCode.Add(new CodeArtifact("clientBaseClass", CodeArtifactType.Class,
             CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Utility,
             $@"export class {_clientGeneratorSettings.ClientBaseClass} {{
-                    public getBaseUrl(defaultUrl: string, fetchBaseUrl?:string) {{
-                        return '{_openApiDocument.Servers?.FirstOrDefault()?.Url}' || defaultUrl || fetchBaseUrl || '';
-                    }}
-                }}"));
+    public getBaseUrl(defaultUrl: string) {{
+        return defaultUrl  || '';
+    }}
+}}"));
         var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), _openApiDocument,
             _extensionCode, _clientGeneratorSettings, _resolver);
         var template =
@@ -79,12 +66,28 @@ public class UtilitiesScriptGenerator
             {
                 continue;
             }
+
             utilitiesCode += "\n" + dtoGlobal[i];
         }
+
         utilitiesCode = utilitiesCode.Replace("function ", "export function ")
             .Replace("Placeholder Code For SwaggerException!", "");
-        utilitiesCode = utilitiesCode.Replace("\n\n", "\n").Replace("\n\n", "\n").Replace("\n\n", "\n");
-        utilitiesCode = CommonCodeGenerator.AppendDisabledLint(utilitiesCode);
+        utilitiesCode = utilitiesCode.RemoveBreakLines();
         return utilitiesCode;
+    }
+
+
+    public List<TsModuleModel> Generate()
+    {
+        var content = GenerateUtilities();
+        var path = Path.Combine(_generatorOption.OutputBaseDirectory, _generatorOption.UtilitiesFileName + ".ts");
+        var result = new List<TsModuleModel>();
+        result.Add(new TsModuleModel()
+        {
+            ModuleContent = content,
+            ModulePath = path,
+            ModuleName = _generatorOption.UtilitiesFileName
+        });
+        return result;
     }
 }

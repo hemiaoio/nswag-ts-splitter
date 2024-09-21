@@ -7,7 +7,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
 		<PackageReference Include="Shouldly" Version="4.2.1" />
 		<PackageReference Include="xunit" Version="2.9.0" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
@@ -21,19 +21,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="Config\nswag.nswag">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Update="Config\ServiceProxyBase.ts">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Update="Config\swagger.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
+	  <Folder Include="Generators\" />
+	  <Folder Include="NJsonSchema\CodeGeneration\TypeScript\" />
+	  <Folder Include="NSwag\CodeGeneration\TypeScript\" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Config\Templates\" />
+	  <None Update="TestConfigs\service.config.nswag">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 	<ProjectExtensions>
