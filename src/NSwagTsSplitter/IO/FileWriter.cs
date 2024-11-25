@@ -1,13 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using NSwag.Commands;
-
 using NSwagTsSplitter.Configuration;
-using NSwagTsSplitter.Extensions;
 using NSwagTsSplitter.Models;
 
 namespace NSwagTsSplitter.IO;
@@ -35,7 +31,22 @@ public class FileWriter
         foreach (var tsModuleModel in _modules)
         {
             var encode = new UTF8Encoding(false);
-            await File.WriteAllTextAsync(tsModuleModel.ModulePath, tsModuleModel.ModuleContent, encode);
+            var fullPath = Path.Combine(_option.OutputBaseDirectory, tsModuleModel.ModulePath);
+            var folderPath = Path.GetDirectoryName(fullPath);
+            if (folderPath == null)
+            {
+                continue;
+            }
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            if (string.IsNullOrWhiteSpace(tsModuleModel.ModuleContent))
+            {
+                continue;
+            }
+            await File.WriteAllTextAsync(fullPath, tsModuleModel.ModuleContent, encode);
         }
     }
 }

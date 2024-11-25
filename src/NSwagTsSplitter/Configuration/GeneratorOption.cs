@@ -31,8 +31,18 @@ public class GeneratorOption
         if (document.CodeGenerators.OpenApiToTypeScriptClient != null)
         {
             model.PlainDto = document.CodeGenerators.OpenApiToTypeScriptClient.DtoPlain;
-            model.ServiceFolder = document.CodeGenerators.OpenApiToTypeScriptClient.ServiceFolder;
-            model.DtoFolder = document.CodeGenerators.OpenApiToTypeScriptClient.DtoFolder;
+            if (!string.IsNullOrWhiteSpace(document.CodeGenerators.OpenApiToTypeScriptClient.ServiceFolder))
+            {
+                model.ServiceFolder = document.CodeGenerators.OpenApiToTypeScriptClient.ServiceFolder;
+            }
+            if (!string.IsNullOrWhiteSpace(document.CodeGenerators.OpenApiToTypeScriptClient.DtoFolder))
+            {
+                model.DtoFolder = document.CodeGenerators.OpenApiToTypeScriptClient.DtoFolder;
+            }
+            if (!string.IsNullOrWhiteSpace(document.CodeGenerators.OpenApiToTypeScriptClient.UtilitiesFileName))
+            {
+                model.UtilitiesFileName = document.CodeGenerators.OpenApiToTypeScriptClient.UtilitiesFileName;
+            }
             if (document.CodeGenerators.OpenApiToTypeScriptClient.CommonModule != null)
             {
                 foreach (var kv in document.CodeGenerators.OpenApiToTypeScriptClient.CommonModule)
@@ -64,18 +74,7 @@ public class GeneratorOption
     /// <summary>
     /// DTO文件全路径
     /// </summary>
-    public string DtoPath
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(DtoFolder))
-            {
-                return OutputBaseDirectory;
-            }
-
-            return Path.Combine(OutputBaseDirectory, DtoFolder);
-        }
-    }
+    public string DtoPath => string.IsNullOrWhiteSpace(DtoFolder) ? "./" : DtoFolder.EnsureStartsWith("./");
 
     /// <summary>
     /// 指定Service文件的根目录
@@ -384,4 +383,6 @@ public class GeneratorOption
             yield return keyValuePair;
         }
     }
+
+    public string NewLineBehavior { get; set; }
 }

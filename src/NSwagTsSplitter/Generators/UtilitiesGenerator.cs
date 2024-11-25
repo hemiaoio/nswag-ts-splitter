@@ -12,13 +12,14 @@ using NSwagTsSplitter.Models;
 
 namespace NSwagTsSplitter.Generators;
 
-public class UtilitiesGenerator : IGenerator
+public class UtilitiesGenerator
 {
     private readonly TypeScriptClientGeneratorSettings _clientGeneratorSettings;
     private readonly TypeScriptGenerator _typeScriptGenerator;
     private readonly TypeScriptTypeResolver _resolver;
     private readonly TypeScriptExtensionCode _extensionCode;
     private readonly OpenApiDocument _openApiDocument;
+    private readonly List<TsModuleModel> _list = new List<TsModuleModel>();
     private readonly GeneratorOption _generatorOption;
 
     public UtilitiesGenerator(TypeScriptClientGeneratorSettings clientGeneratorSettings,
@@ -38,7 +39,7 @@ public class UtilitiesGenerator : IGenerator
     /// 
     /// </summary>
     /// <returns></returns>
-    public string GenerateUtilities()
+    public IEnumerable<TsModuleModel> GenerateUtilities()
     {
         ////var tempClientCode = "Placeholder Code For SwaggerException!";
         var tempClientCode = new List<CodeArtifact>();
@@ -73,21 +74,49 @@ public class UtilitiesGenerator : IGenerator
         utilitiesCode = utilitiesCode.Replace("function ", "export function ")
             .Replace("Placeholder Code For SwaggerException!", "");
         utilitiesCode = utilitiesCode.RemoveBreakLines();
-        return utilitiesCode;
-    }
+        var codeBaseModule = new TsModuleModel()
+        {
+            Artifacts = tempClientCode,
+            ModuleContent = utilitiesCode,
+            ModuleName = _generatorOption.UtilitiesFileName,
+            ModulePath = _generatorOption.UtilitiesFileName.EnsureStartsWith("./").EnsureEndsWith(".ts")
+        };
+        var list = new List<TsModuleModel>()
+        {
+            codeBaseModule,
+            new TsModuleModel()
+            {
+                Artifacts = new List<CodeArtifact>(),
+                ModuleContent = "",
+                ModuleName = _clientGeneratorSettings.ClientBaseClass,
+                ModulePath = codeBaseModule.ModulePath
+            },
 
+        };
+        if (_clientGeneratorSettings.Template == TypeScriptTemplate.Axios)
+        {
+            list.Add(new TsModuleModel()
+            {
+                Artifacts = new List<CodeArtifact>(),
+                ModuleContent = "",
+                ModuleName = "isAxiosError",
+                ModulePath = codeBaseModule.ModulePath
+            });
+            list.Add(new TsModuleModel()
+            {
+                Artifacts = new List<CodeArtifact>(),
+                ModuleContent = "",
+                ModuleName = "throwException",
+                ModulePath = codeBaseModule.ModulePath
+            });
+        }
+        return list;
+    }
 
     public List<TsModuleModel> Generate()
     {
-        var content = GenerateUtilities();
-        var path = Path.Combine(_generatorOption.OutputBaseDirectory, _generatorOption.UtilitiesFileName + ".ts");
-        var result = new List<TsModuleModel>();
-        result.Add(new TsModuleModel()
-        {
-            ModuleContent = content,
-            ModulePath = path,
-            ModuleName = _generatorOption.UtilitiesFileName
-        });
-        return result;
+        var modules = GenerateUtilities();
+        _list.AddRange(modules);
+        return _list;
     }
 }

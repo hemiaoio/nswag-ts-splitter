@@ -34,5 +34,13 @@ public class CustomOpenApiToTypeScriptClient
     /// </summary>
     public List<string> UtilitiesModule { get; set; }
 
+    /// <summary>
+    /// DTO文件夹
+    /// </summary>
     public string DtoFolder { get; set; }
+
+    /// <summary>
+    /// 工具模块文件名称
+    /// </summary>
+    public string UtilitiesFileName { get; set; }
 }

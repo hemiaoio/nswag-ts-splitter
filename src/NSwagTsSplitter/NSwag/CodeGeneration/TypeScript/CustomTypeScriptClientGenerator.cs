@@ -4,6 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+using Newtonsoft.Json;
+
+using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NJsonSchema.CodeGeneration.TypeScript;
 
@@ -11,6 +14,7 @@ using NSwag.CodeGeneration.TypeScript.Models;
 
 using NSwagTsSplitter.Configuration;
 using NSwagTsSplitter.Extensions;
+using NSwagTsSplitter.Generators;
 using NSwagTsSplitter.Models;
 
 // ReSharper disable once CheckNamespace
@@ -22,6 +26,7 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
     private readonly TypeScriptTypeResolver _resolver;
     private readonly OpenApiDocument _document;
     private readonly CustomTypeScriptGenerator _modelGenerator;
+    private readonly List<TsModuleModel> _commonModules = new List<TsModuleModel>();
     private readonly List<TsModuleModel> _list = new List<TsModuleModel>();
     /// <summary>Initializes a new instance of the <see cref="T:NSwag.CodeGeneration.TypeScript.TypeScriptClientGenerator" /> class.</summary>
     /// <param name="document">The Swagger document.</param>
@@ -33,7 +38,6 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
     public CustomTypeScriptClientGenerator(OpenApiDocument document, TypeScriptClientGeneratorSettings settings,
         GeneratorOption option, TypeScriptTypeResolver resolver, CustomTypeScriptGenerator modelGenerator = null) : this(document, settings, resolver, option, modelGenerator)
     {
-        _option = option;
     }
 
     /// <summary>Initializes a new instance of the <see cref="T:NSwag.CodeGeneration.TypeScript.TypeScriptClientGenerator" /> class.</summary>
@@ -53,6 +57,8 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
                           new CustomTypeScriptGenerator(document, settings.TypeScriptGeneratorSettings, resolver,
                               option);
         _resolver = resolver;
+        var utilGenerator = new UtilitiesGenerator(settings, document, option, resolver);
+        _commonModules.AddRange(utilGenerator.Generate());
     }
 
     /// <summary>Generates the client class.</summary>
@@ -63,18 +69,25 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
     protected override IEnumerable<CodeArtifact> GenerateClientTypes(string controllerName, string controllerClassName, IEnumerable<TypeScriptOperationModel> operations)
     {
         var operationArray = operations.ToArray();
-        GenerateDtoTypes(controllerClassName, operationArray);
+        var referenceModules = GenerateDtoTypes(controllerName, operationArray);
         var referenceTypes = GetReferenceTypes(operationArray).ToList();
         if (!string.IsNullOrWhiteSpace(Settings.ClientBaseClass))
         {
             referenceTypes.Add(new KeyValuePair<string, string>(Settings.ClientBaseClass, _option.UtilitiesFileName));
         }
-        var importCodes = referenceTypes.ToImportCode();
+
+        if (Settings.Template == TypeScriptTemplate.Axios)
+        {
+            referenceTypes.Add(new KeyValuePair<string, string>("isAxiosError", _option.UtilitiesFileName));
+            referenceTypes.Add(new KeyValuePair<string, string>("throwException", _option.UtilitiesFileName));
+        }
+        referenceModules.AddRange(_commonModules);
+        var importCodes = referenceTypes.ToImportCode(_option.ServiceFolder, referenceModules);
         var codeArtifacts = base.GenerateClientTypes(controllerName, controllerClassName, operationArray);
         foreach (var codeArtifact in codeArtifacts)
         {
             var code = codeArtifact.Code;
-            code = code.AppendImport(importCodes);
+            code = code.AppendImport(importCodes.JoinAsString(_option.NewLineBehavior), _option.NewLineBehavior);
             code = code.RemoveBreakLines();
             yield return new CodeArtifact(codeArtifact.TypeName, codeArtifact.Type, codeArtifact.Language, codeArtifact.Category,
                 code);
@@ -84,10 +97,11 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
     /// <summary>
     /// 生成DtoTypes
     /// </summary>
-    /// <param name="controllerClassName"></param>
+    /// <param name="controllerName"></param>
     /// <param name="operations"></param>
-    protected virtual void GenerateDtoTypes(string controllerClassName, IEnumerable<TypeScriptOperationModel> operations)
+    protected virtual List<TsModuleModel> GenerateDtoTypes(string controllerName, IEnumerable<TypeScriptOperationModel> operations)
     {
+        var list = new List<TsModuleModel>();
         foreach (var typeScriptOperationModel in operations)
         {
             var operationOpenApiSchemaFieldInfo = typeof(TypeScriptOperationModel).GetField("_operation", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -96,25 +110,38 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
             {
                 continue;
             }
+
+            var dtoPath = Path.Combine(string.IsNullOrWhiteSpace(_option.ServiceFolder) ? "./" : _option.ServiceFolder,
+                controllerName);
             // parameters types:
             foreach (var parameter in operationOpenApiSchema.Parameters)
             {
                 //使用此处生成的Model
-                foreach (var keyValuePair in _modelGenerator.GenerateDtoClass(parameter.Schema, controllerClassName))
+                foreach (var module in _modelGenerator.GenerateDtoClass(parameter.Schema, controllerName,
+                             dtoPath))
                 {
-                    var path = _option.DtoPath;
-                    if (!_option.PlainDto)
+                    if (list.Any(s => s.ModulePath.Equals(module.ModulePath)))
                     {
-                        path = Path.Combine(path, controllerClassName);
+                        continue;
                     }
-                    _list.Add(new TsModuleModel
-                    {
-                        ModuleName = keyValuePair.Key,
-                        ModuleContent = keyValuePair.Value,
-                        ModulePath = Path.Combine(path, keyValuePair.Key + ".ts"),
-                    });
+                    list.Add(module);
                 }
             }
+            // 将QueryParameters 单独生成一个Model
+            var queryParameters = operationOpenApiSchema.Parameters.Where(opi => opi.Kind == OpenApiParameterKind.Query)
+                .ToList();
+            //TODO: 生成QueryParameters
+            //var queryParametersJson = JsonConvert.SerializeObject(queryParameters);
+            //JsonSchema querySchema = JsonSchema.FromSampleJson(queryParametersJson);
+
+            //foreach (var module in _modelGenerator.GenerateDtoClass(querySchema, operationOpenApiSchema.OperationId + "GetParameters", dtoPath))
+            //{
+            //    if (list.Any(s => s.ModulePath.Equals(module.ModulePath)))
+            //    {
+            //        continue;
+            //    }
+            //    list.Add(module);
+            //}
 
             // response types:
             foreach (var responseType in operationOpenApiSchema.Responses)
@@ -125,22 +152,26 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
                     continue;
                 }
                 //使用此处生成的Model
-                foreach (var keyValuePair in _modelGenerator.GenerateDtoClass(resultType, controllerClassName))
+                foreach (var module in _modelGenerator.GenerateDtoClass(resultType, controllerName, Path.Combine(string.IsNullOrWhiteSpace(_option.ServiceFolder) ? "./" : _option.ServiceFolder, controllerName)))
                 {
-                    var path = _option.DtoPath;
-                    if (!_option.PlainDto)
+                    if (list.Any(s => s.ModulePath.Equals(module.ModulePath)))
                     {
-                        path = Path.Combine(path, controllerClassName);
+                        continue;
                     }
-                    _list.Add(new TsModuleModel
-                    {
-                        ModuleName = keyValuePair.Key,
-                        ModuleContent = keyValuePair.Value,
-                        ModulePath = Path.Combine(path, keyValuePair.Key + ".ts"),
-                    });
+                    list.Add(module);
                 }
             }
         }
+
+        foreach (var tsModuleModel in list)
+        {
+            if (_list.Any(s => s.ModulePath == tsModuleModel.ModulePath))
+            {
+                continue;
+            }
+            _list.Add(tsModuleModel);
+        }
+        return list;
 
 
     }
@@ -252,7 +283,6 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
                 ModulePath = Path.Combine(_option.OutputBaseDirectory, codeArtifact.TypeName + ".ts")
             });
         }
-
         return _list;
     }
 }

@@ -69,7 +69,8 @@
       "serviceSchemes": null,
       "output": "./api",
       "newLineBehavior": "LF",
-      "dtoPlain": false,
+      "dtoPlain": true,
+      "dtoFolder": null,
       "commonModule": {
         "ClientBase": "./common/Utilities",
         "ApiException": "./common/Utilities",

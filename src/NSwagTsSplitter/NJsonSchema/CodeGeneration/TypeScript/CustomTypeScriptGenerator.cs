@@ -15,10 +15,13 @@ public class CustomTypeScriptGenerator : TypeScriptGenerator
 {
     private readonly GeneratorOption _option;
     private readonly OpenApiDocument _document;
-    private readonly List<TsModuleModel> _list = new List<TsModuleModel>();
+    private static readonly List<TsModuleModel> List = new List<TsModuleModel>();
 
     private readonly FieldInfo _resolverFieldInfo =
         typeof(TypeScriptGenerator).GetField("_resolver", BindingFlags.Instance | BindingFlags.NonPublic);
+
+    private readonly FieldInfo _resolverGeneratedTypeNames =
+        typeof(TypeScriptTypeResolver).GetField("_generatedTypeNames", BindingFlags.Instance | BindingFlags.NonPublic);
 
     private TypeScriptTypeResolver Resolver
     {
@@ -30,6 +33,24 @@ public class CustomTypeScriptGenerator : TypeScriptGenerator
             }
 
             return _resolverFieldInfo.GetValue(this) as TypeScriptTypeResolver;
+        }
+    }
+
+    private readonly Dictionary<JsonSchema, string> _generatedTypeNames = new Dictionary<JsonSchema, string>();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    private Dictionary<JsonSchema, string> ResolverGeneratedTypeNames
+    {
+        get
+        {
+            if (Resolver == null)
+            {
+                return _generatedTypeNames;
+            }
+
+            return _resolverGeneratedTypeNames.GetValue(Resolver) as Dictionary<JsonSchema, string>;
         }
     }
 
@@ -45,35 +66,40 @@ public class CustomTypeScriptGenerator : TypeScriptGenerator
         _option = option;
     }
 
-    /// <summary>Generates the type.</summary>
-    /// <param name="schema">The schema.</param>
-    /// <param name="typeNameHint">The fallback type name.</param>
-    /// <returns>The code.</returns>
-    protected override CodeArtifact GenerateType(JsonSchema schema, string typeNameHint)
-    {
-        var codeArtifact = base.GenerateType(schema, typeNameHint);
-        var referenceTypes = Resolver.GetReferenceTypes(_option, schema, typeNameHint)
-            .Where(s => s.Value != codeArtifact.TypeName).ToList();
-        var code = codeArtifact.Code;
-        code = code.AppendImport(referenceTypes.ToImportCode());
-        return new CodeArtifact(codeArtifact.TypeName, codeArtifact.Type, codeArtifact.Language, codeArtifact.Category,
-            code);
-    }
-
     /// <summary>
     /// 
     /// </summary>
     /// <param name="schema"></param>
     /// <param name="typeNameHint"></param>
+    /// <param name="parentPath"></param>
     /// <returns></returns>
-    public IEnumerable<KeyValuePair<string, string>> GenerateDtoClass(JsonSchema schema, string typeNameHint)
+    public IEnumerable<TsModuleModel> GenerateDtoClass(JsonSchema schema, string typeNameHint, string parentPath)
     {
         var codeArtifacts = GenerateTypes(schema, typeNameHint);
         foreach (var codeArtifact in codeArtifacts)
         {
+            var path = _option.PlainDto ? $"./{codeArtifact.TypeName}.ts" : Path.Combine(parentPath, codeArtifact.TypeName + ".ts");
+            var model = List.FirstOrDefault(s => s.ModulePath.Equals(path));
+            if (model != null)
+            {
+                yield return model;
+            }
+
+            var generatedSchema = ResolverGeneratedTypeNames.FirstOrDefault(s => s.Value == codeArtifact.TypeName).Key;
+            var referenceModules = Resolver.GetReferenceTypes(_option, generatedSchema, codeArtifact.TypeName).ToArray();
+            var importCodes = referenceModules.ToImportCode(_option.ServiceFolder, new List<TsModuleModel>());
             var code = base.GenerateFile(new[] { codeArtifact });
             code = code.RemoveBreakLines();
-            yield return new KeyValuePair<string, string>(codeArtifact.TypeName, code);
+            code = code.AppendImport(importCodes.JoinAsString(_option.NewLineBehavior), _option.NewLineBehavior);
+            model = new TsModuleModel
+            {
+                ModulePath = path,
+                ModuleContent = code,
+                ModuleName = codeArtifact.TypeName,
+                Schema = generatedSchema,
+                Artifacts = new List<CodeArtifact>() { codeArtifact }
+            };
+            yield return model;
         }
     }
 
@@ -85,17 +111,17 @@ public class CustomTypeScriptGenerator : TypeScriptGenerator
     {
         foreach (var definition in _document.Definitions)
         {
-            foreach (var keyValuePair in GenerateDtoClass(definition.Value, definition.Key))
-            {
-                _list.Add(new TsModuleModel
-                {
-                    ModuleName = keyValuePair.Key,
-                    ModuleContent = keyValuePair.Value,
-                    ModulePath = Path.Combine(_option.DtoPath, keyValuePair.Key + ".ts"),
-                });
-            }
+            var dtos = GenerateDtoClass(definition.Value, definition.Key, _option.DtoPath);
         }
 
-        return _list;
+        foreach (var tsModuleModel in List)
+        {
+            var referenceTypes = Resolver.GetReferenceTypes(_option, tsModuleModel.Schema, tsModuleModel.ModuleName).ToArray();
+            tsModuleModel.ModuleContent = tsModuleModel.ModuleContent.AppendImport(
+                referenceTypes.ToImportCode(tsModuleModel.ModulePath, List).JoinAsString(_option.NewLineBehavior),
+                _option.NewLineBehavior);
+            tsModuleModel.ModuleContent = tsModuleModel.ModuleContent.RemoveBreakLines();
+        }
+        return List;
     }
 }

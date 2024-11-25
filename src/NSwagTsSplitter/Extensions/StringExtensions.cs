@@ -264,6 +264,7 @@ public static class StringExtensions
         {
             return input;
         }
+
         input = input.Trim();
         var newCrlf = string.Join("", Enumerable.Repeat("\n\r", allowBreakLines + 1));
         var newLf = string.Join("", Enumerable.Repeat("\n", allowBreakLines + 1));
@@ -279,8 +280,24 @@ public static class StringExtensions
         {
             return RemoveBreakLines(input, allowBreakLines);
         }
-        return input;
 
+        return input;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="code"></param>
+    /// <param name="newLineBehavior"></param>
+    /// <returns></returns>
+    public static string NormalizeNewLine(this string code, string newLineBehavior)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return code;
+        }
+
+        return code.Replace("\r\n", newLineBehavior).Replace("\n", newLineBehavior).Replace("\r", newLineBehavior);
     }
 
     /// <summary>
@@ -288,15 +305,18 @@ public static class StringExtensions
     /// </summary>
     /// <param name="code"></param>
     /// <param name="importCodeLines"></param>
+    /// <param name="newLineBehavior"></param>
     /// <returns></returns>
-    public static string AppendImport(this string code, string importCodeLines)
+    public static string AppendImport(this string code, string importCodeLines, string newLineBehavior)
     {
         if (string.IsNullOrWhiteSpace(code))
         {
             return code;
         }
-        var lines = code.Split(Environment.NewLine);
-        var importLines = importCodeLines.Split(Environment.NewLine);
+
+        code = code.NormalizeNewLine(newLineBehavior);
+        var lines = code.Split(newLineBehavior);
+        var importLines = importCodeLines.Split(newLineBehavior);
         var stringBuilder = new StringBuilder();
         bool isImported = false;
         foreach (var line in lines)
@@ -305,13 +325,16 @@ public static class StringExtensions
             {
                 foreach (var importLine in importLines)
                 {
-                    stringBuilder.AppendLine(importLine);
+                    stringBuilder.Append(importLine);
+                    stringBuilder.Append(newLineBehavior);
                 }
 
-                stringBuilder.AppendLine();
+                stringBuilder.Append(newLineBehavior);
                 isImported = true;
             }
-            stringBuilder.AppendLine(line);
+
+            stringBuilder.Append(line);
+            stringBuilder.Append(newLineBehavior);
         }
 
         return stringBuilder.ToString();
