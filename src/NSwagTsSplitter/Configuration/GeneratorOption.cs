@@ -23,6 +23,11 @@ public class GeneratorOption
 
     public string DisabledLint { get; set; } = "/* tslint:disable */";
 
+    /// <summary>
+    /// Get Base Url Body code
+    /// </summary>
+    public string GetBaseUrlBody { get; set; } = "return defaultUrl  || '';";
+
     public static GeneratorOption FromConfigFile(string configFilePath)
     {
         var fileContent = File.ReadAllText(configFilePath);

@@ -50,7 +50,7 @@ public class UtilitiesGenerator
             CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Utility,
             $@"export class {_clientGeneratorSettings.ClientBaseClass} {{
     public getBaseUrl(defaultUrl: string) {{
-        return defaultUrl  || '';
+        {_generatorOption.GetBaseUrlBody}
     }}
 }}"));
         var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), _openApiDocument,
