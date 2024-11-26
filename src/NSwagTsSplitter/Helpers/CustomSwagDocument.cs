@@ -1,20 +1,28 @@
 ﻿using System.Collections.Generic;
 
+using Newtonsoft.Json;
+
 namespace NSwagTsSplitter.Helpers;
 
 public class CustomSwagDocument
 {
+    [JsonConstructor]
+    public CustomSwagDocument() { }
     public CustomCodeGenerators CodeGenerators { get; set; }
 }
 
 
 public class CustomCodeGenerators
 {
+    [JsonConstructor]
+    public CustomCodeGenerators() { }
     public CustomOpenApiToTypeScriptClient OpenApiToTypeScriptClient { get; set; }
 }
 
 public class CustomOpenApiToTypeScriptClient
 {
+    [JsonConstructor]
+    public CustomOpenApiToTypeScriptClient() { }
     /// <summary>
     /// 平铺dto，不按照Client分割DTO
     /// </summary>
