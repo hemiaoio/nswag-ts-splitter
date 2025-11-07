@@ -6,7 +6,7 @@ Remove-Item ./example/* -Include *.exe -Recurse -Force
 # dotnet publish -c Release -r win-x64 -o ./example /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true ./src/NSwagTsSplitter/NSwagTsSplitter.csproj
 
 
-dotnet publish -c Release -r win-x64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:TrimmerSingleWarn=false -o ./example/nswag/win-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj
+dotnet publish -c Release -r win-x64 --self-contained -o ./example/nswag/win-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj
 
 # dotnet publish -c Release -r linux-x64 --self-contained -o ./example/nswag/linux-x64 ./src/NSwagTsSplitter/NSwagTsSplitter.csproj
 

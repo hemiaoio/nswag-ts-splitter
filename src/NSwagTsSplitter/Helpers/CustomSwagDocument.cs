@@ -51,4 +51,11 @@ public class CustomOpenApiToTypeScriptClient
     /// 工具模块文件名称
     /// </summary>
     public string UtilitiesFileName { get; set; }
+
+    /// <summary>
+    /// GetBaseUrl Function Body 
+    /// </summary>
+    public string GetBaseUrlBody { get; set; }
+
+    public string[] DisabledLintLines { get; set; }
 }

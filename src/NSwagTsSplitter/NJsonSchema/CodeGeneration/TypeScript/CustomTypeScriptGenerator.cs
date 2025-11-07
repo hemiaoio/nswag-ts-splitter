@@ -86,7 +86,14 @@ public class CustomTypeScriptGenerator : TypeScriptGenerator
             }
 
             var generatedSchema = ResolverGeneratedTypeNames.FirstOrDefault(s => s.Value == codeArtifact.TypeName).Key;
-            var referenceModules = Resolver.GetReferenceTypes(_option, generatedSchema, codeArtifact.TypeName).ToArray();
+            var referenceModuleTypes = Resolver.GetReferenceTypes(_option, generatedSchema, codeArtifact.TypeName);
+            var referenceModules = new Dictionary<string, string>();
+            foreach (var type in referenceModuleTypes)
+            {
+                referenceModules.AddIfNot(type.Key, type.Value);
+            }
+
+            referenceModules.Remove(codeArtifact.TypeName);
             var importCodes = referenceModules.ToImportCode(_option.ServiceFolder, new List<TsModuleModel>());
             var code = base.GenerateFile(new[] { codeArtifact });
             code = code.RemoveBreakLines();

@@ -21,7 +21,7 @@ public class GeneratorOption
 
     private string _configPath;
 
-    public string DisabledLint { get; set; } = "/* tslint:disable */";
+    public string[] DisabledLintLines { get; set; } = new[] { "/* tslint:disable */" };
 
     /// <summary>
     /// Get Base Url Body code
@@ -60,6 +60,17 @@ public class GeneratorOption
             {
                 model.UtilitiesModule = model.UtilitiesModule
                     .Concat(document.CodeGenerators.OpenApiToTypeScriptClient.UtilitiesModule).Distinct().ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(document.CodeGenerators.OpenApiToTypeScriptClient.GetBaseUrlBody))
+            {
+                model.GetBaseUrlBody = document.CodeGenerators.OpenApiToTypeScriptClient.GetBaseUrlBody;
+            }
+
+            if (document.CodeGenerators.OpenApiToTypeScriptClient.DisabledLintLines != null &&
+                document.CodeGenerators.OpenApiToTypeScriptClient.DisabledLintLines.Any())
+            {
+                model.DisabledLintLines = document.CodeGenerators.OpenApiToTypeScriptClient.DisabledLintLines;
             }
         }
 

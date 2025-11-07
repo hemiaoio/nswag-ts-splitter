@@ -70,7 +70,12 @@
       "output": "./api",
       "newLineBehavior": "LF",
       "dtoPlain": true,
-      "dtoFolder": null,
+      "dtoFolder": "./dto",
+      "disabledLintLines": [
+        "/* eslint-disable eslint-comments/no-unlimited-disable */",
+        "/* eslint-disable unicorn/no-abusive-eslint-disable */",
+        "/* eslint-disable spaced-comment */"
+      ],
       "commonModule": {
         "ClientBase": "./common/Utilities",
         "ApiException": "./common/Utilities",

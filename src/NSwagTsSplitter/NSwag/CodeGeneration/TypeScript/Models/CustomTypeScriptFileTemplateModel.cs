@@ -147,10 +147,7 @@ public class CustomTypeScriptFileTemplateModel
 
     /// <summary>Gets a value indicating whether MomentJS duration format is needed (moment-duration-format package).</summary>
     public bool RequiresMomentJSDuration => Types?.Contains("moment.duration(") == true;
-
-    /// <summary>Gets a value indicating whether the target TypeScript version supports override keyword.</summary>
-    public bool SupportsOverrideKeyword => _settings.TypeScriptGeneratorSettings.SupportsOverrideKeyword;
-
+    
     /// <summary>Gets a value indicating whether the target TypeScript version supports Type-Only imports</summary>
     public bool SupportsTypeOnlyImports => _settings.TypeScriptGeneratorSettings.TypeScriptVersion >= 3.8m;
 

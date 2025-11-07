@@ -22,10 +22,7 @@ namespace NSwagTsSplitter.Extensions
 
         public static void AddIfNot<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
         {
-            if (!dictionary.ContainsKey(key))
-            {
-                dictionary.Add(key, value);
-            }
+            dictionary.TryAdd(key, value);
         }
 
         public static void AddOrReplace<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)

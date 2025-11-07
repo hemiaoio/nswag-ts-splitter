@@ -43,20 +43,10 @@ public class UtilitiesGenerator
     {
         ////var tempClientCode = "Placeholder Code For SwaggerException!";
         var tempClientCode = new List<CodeArtifact>();
-        tempClientCode.Add(new CodeArtifact("tsException", CodeArtifactType.Undefined,
-            CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Undefined,
-            "Placeholder Code For SwaggerException!"));
-        tempClientCode.Add(new CodeArtifact("clientBaseClass", CodeArtifactType.Class,
-            CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Utility,
-            $@"export class {_clientGeneratorSettings.ClientBaseClass} {{
-    public getBaseUrl(defaultUrl: string) {{
-        {_generatorOption.GetBaseUrlBody}
-    }}
-}}"));
         var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), _openApiDocument,
             _extensionCode, _clientGeneratorSettings, _resolver);
         var template =
-            _clientGeneratorSettings.CodeGeneratorSettings.TemplateFactory.CreateTemplate("TypeScript", "File",
+            _clientGeneratorSettings.CodeGeneratorSettings.TemplateFactory.CreateTemplate("TypeScript", "File.Utilities",
                 model);
         var utilitiesCode = template.Render();
 
