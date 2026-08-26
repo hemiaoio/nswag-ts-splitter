@@ -1,9 +1,5 @@
 ﻿using System.IO;
-using System.Threading.Tasks;
-
 using NJsonSchema.CodeGeneration.TypeScript;
-
-using NSwag;
 using NSwag.Commands;
 
 using NSwagTsSplitter.Configuration;
@@ -22,7 +18,6 @@ public class UtilitiesGeneratorTests
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly GeneratorOption _generatorOption;
     private readonly NSwagDocument _nSwagDocument;
-    private readonly OpenApiDocument _openApiDocument;
 
     public UtilitiesGeneratorTests(ITestOutputHelper testOutputHelper)
     {
@@ -31,8 +26,6 @@ public class UtilitiesGeneratorTests
         var nswagPath = Path.Combine(Directory.GetCurrentDirectory(), "TestConfigs/service.config.nswag");
         _generatorOption = ArgumentsHelper.ReadArgs(new[] { "--config", nswagPath });
         _nSwagDocument = NsWagDocumentHelper.LoadDocumentFromFile(_generatorOption.ConfigPath);
-        _openApiDocument =
-            OpenApiDocumentHelper.FromDocumentCommand(_nSwagDocument.SwaggerGenerators.FromDocumentCommand);
     }
 
     [Fact]
@@ -42,14 +35,14 @@ public class UtilitiesGeneratorTests
         var resolver = new TypeScriptTypeResolver(_nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand
             .Settings.TypeScriptGeneratorSettings);
         UtilitiesGenerator utilitiesGenerator = new UtilitiesGenerator(
-            _nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand.Settings, _openApiDocument,
+            _nSwagDocument.CodeGenerators.OpenApiToTypeScriptClientCommand.Settings,
             _generatorOption, resolver);
 
         // Act
         var result = utilitiesGenerator.Generate();
 
         // Assert
-        result.Count.ShouldBe(1);
+        result.Count.ShouldBe(4);
         _testOutputHelper.WriteLine(result[0].ModuleContent);
     }
 }

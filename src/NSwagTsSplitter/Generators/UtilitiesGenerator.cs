@@ -2,7 +2,6 @@
 using NSwag;
 using NJsonSchema.CodeGeneration.TypeScript;
 using System.Collections.Generic;
-using System.IO;
 using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NSwag.CodeGeneration.TypeScript.Models;
@@ -18,12 +17,10 @@ public class UtilitiesGenerator
     private readonly TypeScriptGenerator _typeScriptGenerator;
     private readonly TypeScriptTypeResolver _resolver;
     private readonly TypeScriptExtensionCode _extensionCode;
-    private readonly OpenApiDocument _openApiDocument;
-    private readonly List<TsModuleModel> _list = new List<TsModuleModel>();
+    private readonly List<TsModuleModel> _list = new();
     private readonly GeneratorOption _generatorOption;
 
-    public UtilitiesGenerator(TypeScriptClientGeneratorSettings clientGeneratorSettings,
-        OpenApiDocument openApiDocument, GeneratorOption generatorOption, TypeScriptTypeResolver resolver)
+    public UtilitiesGenerator(TypeScriptClientGeneratorSettings clientGeneratorSettings, GeneratorOption generatorOption, TypeScriptTypeResolver resolver)
     {
         _clientGeneratorSettings = clientGeneratorSettings;
         _resolver = resolver;
@@ -31,7 +28,6 @@ public class UtilitiesGenerator
             clientGeneratorSettings.TypeScriptGeneratorSettings.ExtendedClasses);
         _typeScriptGenerator =
             new TypeScriptGenerator(null, _clientGeneratorSettings.TypeScriptGeneratorSettings, _resolver);
-        _openApiDocument = openApiDocument;
         _generatorOption = generatorOption;
     }
 
@@ -43,7 +39,17 @@ public class UtilitiesGenerator
     {
         ////var tempClientCode = "Placeholder Code For SwaggerException!";
         var tempClientCode = new List<CodeArtifact>();
-        var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), _openApiDocument,
+        tempClientCode.Add(new CodeArtifact("tsException", CodeArtifactType.Undefined,
+            CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Undefined,
+            "Placeholder Code For SwaggerException!"));
+        tempClientCode.Add(new CodeArtifact("clientBaseClass", CodeArtifactType.Class,
+            CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Utility,
+            $@"export class {_clientGeneratorSettings.ClientBaseClass} {{
+    public getBaseUrl(defaultUrl: string) {{
+        {_generatorOption.GetBaseUrlBody}
+    }}
+}}"));
+        var model = new TypeScriptFileTemplateModel(tempClientCode, new List<CodeArtifact>(), new OpenApiDocument(),
             _extensionCode, _clientGeneratorSettings, _resolver);
         var template =
             _clientGeneratorSettings.CodeGeneratorSettings.TemplateFactory.CreateTemplate("TypeScript", "File.Utilities",

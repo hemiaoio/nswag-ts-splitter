@@ -1,0 +1,7 @@
+export class {{ Settings.ClientBaseClass }} {
+    {%-     if UseGetBaseUrlMethod %}
+    public getBaseUrl(defaultUrl: string) {
+        return defaultUrl  || '';
+    }
+    {%-     endif %}
+}

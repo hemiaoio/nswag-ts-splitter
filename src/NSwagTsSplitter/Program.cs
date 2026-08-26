@@ -74,7 +74,7 @@ namespace NSwagTsSplitter
             var resolver = new TypeScriptTypeResolver(settings.TypeScriptGeneratorSettings);
 
             // Utilities
-            var utilitiesGenerator = new UtilitiesGenerator(settings, swaggerDocument, config, resolver);
+            var utilitiesGenerator = new UtilitiesGenerator(settings, config, resolver);
             var utilitiesModules = utilitiesGenerator.Generate();
             fileWriter.AddModules(utilitiesModules);
             stopwatch.Stop();

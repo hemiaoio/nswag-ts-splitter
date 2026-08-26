@@ -3,10 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
-using Newtonsoft.Json;
-
-using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NJsonSchema.CodeGeneration.TypeScript;
 
@@ -57,7 +53,7 @@ public class CustomTypeScriptClientGenerator : TypeScriptClientGenerator
                           new CustomTypeScriptGenerator(document, settings.TypeScriptGeneratorSettings, resolver,
                               option);
         _resolver = resolver;
-        var utilGenerator = new UtilitiesGenerator(settings, document, option, resolver);
+        var utilGenerator = new UtilitiesGenerator(settings, option, resolver);
         _commonModules.AddRange(utilGenerator.Generate());
     }
 

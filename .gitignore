@@ -334,3 +334,4 @@ example/nswag/api/
 example/nswag/linux-x64/
 example/nswag/osx-x64/
 example/nswag/win-x64/
+*.exe
